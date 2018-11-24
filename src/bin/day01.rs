@@ -1,5 +1,4 @@
-use aoc2018::args::{dispatch};
-use aoc2018::shared::AppResult;
+use aoc2018::shared::{AppResult, dispatch};
 
 fn main() {
     dispatch(&part1, &part2)
