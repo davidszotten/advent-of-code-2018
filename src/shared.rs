@@ -5,13 +5,11 @@ use std::io::{self, Read};
 
 pub type AppResult<T> = Result<T, Error>;
 
-#[derive(Debug)]
 enum Part {
     Part1,
     Part2,
 }
 
-#[derive(Debug)]
 struct Args {
     part: Part,
     input: String,
