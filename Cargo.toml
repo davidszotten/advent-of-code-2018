@@ -1,0 +1,10 @@
+[package]
+name = "aoc2018"
+version = "0.1.0"
+authors = ["David Szotten <davidszotten@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+clap = "2.32.0"
+failure = "0.1.3"
+nom = "4.1.1"
