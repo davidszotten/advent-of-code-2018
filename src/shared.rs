@@ -20,7 +20,7 @@ struct Args {
 fn read_stdin() -> AppResult<String> {
     let mut buffer = String::new();
     io::stdin().read_to_string(&mut buffer)?;
-    Ok(buffer.into())
+    Ok(buffer)
 }
 
 fn read_file(filename: &str) -> AppResult<String> {
@@ -28,7 +28,7 @@ fn read_file(filename: &str) -> AppResult<String> {
     let mut handle = File::open(filename)?;
 
     handle.read_to_string(&mut buffer)?;
-    Ok(buffer.into())
+    Ok(buffer)
 }
 
 fn parse_input() -> AppResult<Args> {
@@ -60,10 +60,7 @@ fn parse_input() -> AppResult<Args> {
         "-" => read_stdin(),
         filename => read_file(filename),
     }?;
-    Ok(Args {
-        part: part,
-        input: input,
-    })
+    Ok(Args { part, input })
 }
 
 fn run(part1: &Fn(&str) -> AppResult<u32>, part2: &Fn(&str) -> AppResult<u32>) -> AppResult<u32> {
