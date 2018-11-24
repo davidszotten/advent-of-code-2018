@@ -10,9 +10,14 @@ enum Part {
     Part2,
 }
 
+enum Source {
+    Stdin,
+    File(String),
+}
+
 struct Args {
     part: Part,
-    input: String,
+    source: Source,
 }
 
 fn read_stdin() -> AppResult<String> {
@@ -51,21 +56,25 @@ fn parse_input() -> AppResult<Args> {
         "2" => Part::Part2,
         _ => bail!("Invalid part"),
     };
-    let input = match matches
+    let source = match matches
         .value_of("input")
         .expect("input is required but missing")
     {
-        "-" => read_stdin(),
-        filename => read_file(filename),
-    }?;
-    Ok(Args { part, input })
+        "-" => Source::Stdin,
+        filename => Source::File(filename.into()),
+    };
+    Ok(Args { part, source })
 }
 
 fn run(part1: &Fn(&str) -> AppResult<u32>, part2: &Fn(&str) -> AppResult<u32>) -> AppResult<u32> {
     let args = parse_input()?;
+    let input = match args.source {
+        Source::Stdin => read_stdin(),
+        Source::File(filename) => read_file(&filename),
+    }?;
     match args.part {
-        Part::Part1 => part1(&args.input),
-        Part::Part2 => part2(&args.input),
+        Part::Part1 => part1(&input),
+        Part::Part2 => part2(&input),
     }
 }
 
