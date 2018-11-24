@@ -66,7 +66,9 @@ fn parse_input() -> AppResult<Args> {
     Ok(Args { part, source })
 }
 
-fn run(part1: &Fn(&str) -> AppResult<u32>, part2: &Fn(&str) -> AppResult<u32>) -> AppResult<u32> {
+type DayFunc = Fn(&str) -> AppResult<u32>;
+
+fn run(part1: &DayFunc, part2: &DayFunc) -> AppResult<u32> {
     let args = parse_input()?;
     let input = match args.source {
         Source::Stdin => read_stdin(),
@@ -78,7 +80,7 @@ fn run(part1: &Fn(&str) -> AppResult<u32>, part2: &Fn(&str) -> AppResult<u32>) -
     }
 }
 
-pub fn dispatch(part1: &Fn(&str) -> AppResult<u32>, part2: &Fn(&str) -> AppResult<u32>) {
+pub fn dispatch(part1: &DayFunc, part2: &DayFunc) {
     match run(part1, part2) {
         Ok(result) => println!("{}", result),
         Err(err) => println!("{}", err),
