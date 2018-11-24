@@ -1,21 +1,17 @@
-use aoc2018::args::{parse_input, Part};
+use aoc2018::args::{dispatch};
 use aoc2018::shared::AppResult;
 
-fn main() -> AppResult<()> {
-    let args = parse_input()?;
-    match args.part {
-        Part::Part1 => part1(&args.input),
-        Part::Part2 => part2(&args.input),
-    }
+fn main() {
+    dispatch(&part1, &part2)
 }
 
-pub fn part1(_input: &str) -> AppResult<()> {
-    Ok(())
+fn part1(_input: &str) -> AppResult<u32> {
+    Ok(1)
 }
 
 
-pub fn part2(_input: &str) -> AppResult<()> {
-    Ok(())
+fn part2(_input: &str) -> AppResult<u32> {
+    Ok(2)
 }
 
 
@@ -25,6 +21,6 @@ mod tests {
 
     #[test]
     fn test_part1() {
-        assert_eq!(part1("").unwrap(), 0);
+        assert_eq!(part1("").unwrap(), 1);
     }
 }

@@ -1,20 +1,20 @@
 use clap::{App, Arg};
-use crate::shared;
+use crate::shared::{self, AppResult};
 use failure::bail;
 
 #[derive(Debug)]
-pub enum Part {
+enum Part {
     Part1,
     Part2,
 }
 
 #[derive(Debug)]
-pub struct Args {
-    pub part: Part,
-    pub input: String,
+struct Args {
+    part: Part,
+    input: String,
 }
 
-pub fn parse_input() -> shared::AppResult<Args> {
+fn parse_input() -> shared::AppResult<Args> {
     let matches = App::new("adventofcode")
         .arg(Arg::with_name("part")
             .short("p")
@@ -44,4 +44,27 @@ pub fn parse_input() -> shared::AppResult<Args> {
         part: part,
         input: input,
     })
+}
+
+
+fn run(
+    part1: &Fn(&str) -> AppResult<u32>,
+    part2: &Fn(&str) -> AppResult<u32>,
+) -> AppResult<u32> {
+    let args = parse_input()?;
+    match args.part {
+        Part::Part1 => part1(&args.input),
+        Part::Part2 => part2(&args.input),
+    }
+}
+
+
+pub fn dispatch(
+    part1: &Fn(&str) -> AppResult<u32>,
+    part2: &Fn(&str) -> AppResult<u32>,
+) {
+    match run(part1, part2) {
+        Ok(result) => println!("{}", result),
+        Err(err) => println!("{}", err),
+    };
 }
