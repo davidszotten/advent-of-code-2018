@@ -1,14 +1,14 @@
-use aoc2018::shared::{dispatch, AppResult};
+use aoc2018::{dispatch, Result};
 
 fn main() {
     dispatch(&part1, &part2)
 }
 
-fn part1(_input: &str) -> AppResult<u32> {
+fn part1(_input: &str) -> Result<u32> {
     Ok(1)
 }
 
-fn part2(_input: &str) -> AppResult<u32> {
+fn part2(_input: &str) -> Result<u32> {
     Ok(2)
 }
 
@@ -17,7 +17,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_part1() {
-        assert_eq!(part1("").unwrap(), 1);
+    fn test_part1() -> Result<()> {
+        Ok(assert_eq!(part1("")?, 1))
     }
 }

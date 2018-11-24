@@ -2,8 +2,9 @@ use clap::{App, Arg};
 use failure::{bail, Error};
 use std::fs::File;
 use std::io::{self, Read};
+use std::result;
 
-pub type AppResult<T> = Result<T, Error>;
+pub type Result<T> = result::Result<T, Error>;
 
 enum Part {
     Part1,
@@ -20,13 +21,13 @@ struct Args {
     source: Source,
 }
 
-fn read_stdin() -> AppResult<String> {
+fn read_stdin() -> Result<String> {
     let mut buffer = String::new();
     io::stdin().read_to_string(&mut buffer)?;
     Ok(buffer)
 }
 
-fn read_file(filename: &str) -> AppResult<String> {
+fn read_file(filename: &str) -> Result<String> {
     let mut buffer = String::new();
     let mut handle = File::open(filename)?;
 
@@ -34,7 +35,7 @@ fn read_file(filename: &str) -> AppResult<String> {
     Ok(buffer)
 }
 
-fn parse_input() -> AppResult<Args> {
+fn parse_input() -> Result<Args> {
     let matches = App::new("adventofcode")
         .arg(
             Arg::with_name("part")
@@ -66,9 +67,9 @@ fn parse_input() -> AppResult<Args> {
     Ok(Args { part, source })
 }
 
-type DayFunc = Fn(&str) -> AppResult<u32>;
+type DayFunc = Fn(&str) -> Result<u32>;
 
-fn run(part1: &DayFunc, part2: &DayFunc) -> AppResult<u32> {
+fn run(part1: &DayFunc, part2: &DayFunc) -> Result<u32> {
     let args = parse_input()?;
     let input = match args.source {
         Source::Stdin => read_stdin(),
