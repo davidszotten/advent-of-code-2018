@@ -5,11 +5,11 @@ fn main() {
 }
 
 fn part1(_input: &str) -> Result<u32> {
-    Ok(1)
+    Ok(0)
 }
 
 fn part2(_input: &str) -> Result<u32> {
-    Ok(2)
+    Ok(0)
 }
 
 #[cfg(test)]
@@ -18,6 +18,6 @@ mod tests {
 
     #[test]
     fn test_part1() -> Result<()> {
-        Ok(assert_eq!(part1("")?, 1))
+        Ok(assert_eq!(part1("")?, 0))
     }
 }
