@@ -6,27 +6,28 @@ fn main() {
 }
 
 fn part1(input: &str) -> Result<i32> {
-    Ok(
-        input.split('\n')
+    Ok(input
+        .split('\n')
         .filter_map(|x| x.parse::<i32>().ok())
-        .sum()
-    )
+        .sum())
 }
 
 fn part2(input: &str) -> Result<i32> {
     let mut freq = 0;
     let mut seen = HashSet::<i32>::new();
     seen.insert(freq);
-    loop {
-        for value in input.split('\n')
-            .filter_map(|x| x.parse::<i32>().ok()) {
-                freq += value;
-                if seen.contains(&freq) {
-                    return Ok(freq);
-                }
-                seen.insert(freq);
-            }
+    for value in input
+        .split('\n')
+        .filter_map(|x| x.parse::<i32>().ok())
+        .cycle()
+    {
+        freq += value;
+        if seen.contains(&freq) {
+            return Ok(freq);
+        }
+        seen.insert(freq);
     }
+    unreachable!();
 }
 
 #[cfg(test)]
