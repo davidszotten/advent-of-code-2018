@@ -4,11 +4,11 @@ fn main() {
     dispatch(&part1, &part2)
 }
 
-fn part1(_input: &str) -> Result<u32> {
+fn part1(_input: &str) -> Result<i32> {
     Ok(0)
 }
 
-fn part2(_input: &str) -> Result<u32> {
+fn part2(_input: &str) -> Result<i32> {
     Ok(0)
 }
 
