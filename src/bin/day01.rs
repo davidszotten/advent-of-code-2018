@@ -19,6 +19,8 @@ fn part2(input: &str) -> Result<i32> {
     for value in input
         .split('\n')
         .filter_map(|x| x.parse::<i32>().ok())
+        .collect::<Vec<_>>()
+        .iter()
         .cycle()
     {
         freq += value;
