@@ -8,15 +8,15 @@ fn main() {
 
 #[derive(Debug, PartialEq)]
 struct Found {
-    found2: u32,
-    found3: u32,
+    found2: i32,
+    found3: i32,
 }
 
 impl Found {
-    fn new() -> Self {
+    fn new(found2: i32, found3: i32) -> Self {
         Found {
-            found2: 0,
-            found3: 0,
+            found2: found2,
+            found3: found3,
         }
     }
 }
@@ -60,11 +60,11 @@ fn find(input: &str) -> Found {
 }
 
 fn part1(input: &str) -> Result<i32> {
-    let mut found = Found::new();
+    let mut found = Found::new(0, 0);
     for row in input.split('\n') {
         found += find(row);
     }
-    Ok((found.found2 * found.found3) as i32)
+    Ok(found.found2 * found.found3)
 }
 
 fn compare(s1: &str, s2: &str) -> bool {
@@ -112,55 +112,13 @@ mod tests {
 
     #[test]
     fn test_find() {
-        assert_eq!(
-            find("abcdef"),
-            Found {
-                found2: 0,
-                found3: 0
-            }
-        );
-        assert_eq!(
-            find("bababc"),
-            Found {
-                found2: 1,
-                found3: 1
-            }
-        );
-        assert_eq!(
-            find("abbcde"),
-            Found {
-                found2: 1,
-                found3: 0
-            }
-        );
-        assert_eq!(
-            find("abcccd"),
-            Found {
-                found2: 0,
-                found3: 1
-            }
-        );
-        assert_eq!(
-            find("aabcdd"),
-            Found {
-                found2: 1,
-                found3: 0
-            }
-        );
-        assert_eq!(
-            find("abcdee"),
-            Found {
-                found2: 1,
-                found3: 0
-            }
-        );
-        assert_eq!(
-            find("ababab"),
-            Found {
-                found2: 0,
-                found3: 1
-            }
-        );
+        assert_eq!(find("abcdef"), Found::new(0, 0));
+        assert_eq!(find("bababc"), Found::new(1, 1));
+        assert_eq!(find("abbcde"), Found::new(1, 0));
+        assert_eq!(find("abcccd"), Found::new(0, 1));
+        assert_eq!(find("aabcdd"), Found::new(1, 0));
+        assert_eq!(find("abcdee"), Found::new(1, 0));
+        assert_eq!(find("ababab"), Found::new(0, 1));
     }
 
     #[test]
