@@ -67,14 +67,42 @@ fn part1(input: &str) -> Result<i32> {
     Ok((found.found2 * found.found3) as i32)
 }
 
-fn part2(_input: &str) -> Result<i32> {
-    let mut c = 0;
-    for _ in vec![1, 2, 3].iter().cycle() {
-        c += 1;
-        if c == 10 {
-            return Ok(c);
+fn compare(s1: &str, s2: &str) -> bool {
+    let mut found = false;
+    for (c1, c2) in s1.chars().zip(s2.chars()) {
+        if c1 != c2 {
+            if found {
+                return false;
+            }
+            found = true;
         }
     }
+    found
+}
+
+fn find_match(input: &str) -> (&str, &str) {
+    let mut strings = vec![];
+    for row in input.split('\n') {
+        strings.push(row);
+    }
+    for a in 0..strings.len() {
+        for b in (a + 1)..strings.len() {
+            if compare(strings[a], strings[b]) {
+                return (strings[a], strings[b]);
+            }
+        }
+    }
+    unreachable!();
+}
+
+fn part2(input: &str) -> Result<i32> {
+    let (s1, s2) = find_match(input);
+    for (c1, c2) in s1.chars().zip(s2.chars()) {
+        if c1 == c2 {
+            print!("{}", c1);
+        }
+    }
+    println!("");
     Ok(0)
 }
 
@@ -87,51 +115,61 @@ mod tests {
         assert_eq!(
             find("abcdef"),
             Found {
-                found2: false,
-                found3: false
+                found2: 0,
+                found3: 0
             }
         );
         assert_eq!(
             find("bababc"),
             Found {
-                found2: true,
-                found3: true
+                found2: 1,
+                found3: 1
             }
         );
         assert_eq!(
             find("abbcde"),
             Found {
-                found2: true,
-                found3: false
+                found2: 1,
+                found3: 0
             }
         );
         assert_eq!(
             find("abcccd"),
             Found {
-                found2: false,
-                found3: true
+                found2: 0,
+                found3: 1
             }
         );
         assert_eq!(
             find("aabcdd"),
             Found {
-                found2: true,
-                found3: false
+                found2: 1,
+                found3: 0
             }
         );
         assert_eq!(
             find("abcdee"),
             Found {
-                found2: true,
-                found3: false
+                found2: 1,
+                found3: 0
             }
         );
         assert_eq!(
             find("ababab"),
             Found {
-                found2: false,
-                found3: true
+                found2: 0,
+                found3: 1
             }
         );
+    }
+
+    #[test]
+    fn test_compare_false() {
+        assert!(!compare("abcde", "axcye"),);
+    }
+
+    #[test]
+    fn test_compare_true() {
+        assert!(compare("fghij", "fguij"),);
     }
 }
