@@ -8,12 +8,12 @@ fn main() {
 
 #[derive(Debug, PartialEq)]
 struct Found {
-    found2: i32,
-    found3: i32,
+    found2: u32,
+    found3: u32,
 }
 
 impl Found {
-    fn new(found2: i32, found3: i32) -> Self {
+    fn new(found2: u32, found3: u32) -> Self {
         Found {
             found2: found2,
             found3: found3,
@@ -59,7 +59,7 @@ fn find(input: &str) -> Found {
     Found { found2, found3 }
 }
 
-fn part1(input: &str) -> Result<i32> {
+fn part1(input: &str) -> Result<u32> {
     let mut found = Found::new(0, 0);
     for row in input.split('\n') {
         found += find(row);
@@ -95,15 +95,15 @@ fn find_match(input: &str) -> (&str, &str) {
     unreachable!();
 }
 
-fn part2(input: &str) -> Result<i32> {
+fn part2(input: &str) -> Result<String> {
+    let mut chars = vec![];
     let (s1, s2) = find_match(input);
     for (c1, c2) in s1.chars().zip(s2.chars()) {
         if c1 == c2 {
-            print!("{}", c1);
+            chars.push(c1);
         }
     }
-    println!("");
-    Ok(0)
+    Ok(chars.iter().collect())
 }
 
 #[cfg(test)]
