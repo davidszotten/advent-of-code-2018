@@ -1,36 +1,70 @@
 use aoc2018::{dispatch, Result};
 use std::collections::HashMap;
+use std::ops;
 
 fn main() {
     dispatch(&part1, &part2)
 }
 
-fn part1(input: &str) -> Result<i32> {
-    let mut found2s = 0;
-    let mut found3s = 0;
-    for row in input.split('\n') {
-        let mut chars = HashMap::new();
-        for c in row.chars() {
-            let count = chars.entry(c).or_insert(0);
-            *count += 1;
-        }
-        let mut found2 = false;
-        let mut found3 = false;
-        for v in chars.values() {
-            match v {
-                2 => found2 = true,
-                3 => found3 = true,
-                _ => {}
-            }
-        }
-        if found2 {
-            found2s += 1;
-        }
-        if found3 {
-            found3s += 1;
+#[derive(Debug, PartialEq)]
+struct Found {
+    found2: u32,
+    found3: u32,
+}
+
+impl Found {
+    fn new() -> Self {
+        Found {
+            found2: 0,
+            found3: 0,
         }
     }
-    Ok(found2s * found3s)
+}
+
+impl ops::Add for Found {
+    type Output = Found;
+
+    fn add(self, other: Found) -> Found {
+        Found {
+            found2: self.found2 + other.found2,
+            found3: self.found3 + other.found3,
+        }
+    }
+}
+
+impl ops::AddAssign for Found {
+    fn add_assign(&mut self, other: Found) {
+        *self = Found {
+            found2: self.found2 + other.found2,
+            found3: self.found3 + other.found3,
+        }
+    }
+}
+
+fn find(input: &str) -> Found {
+    let mut chars = HashMap::new();
+    for c in input.chars() {
+        let count = chars.entry(c).or_insert(0);
+        *count += 1;
+    }
+    let mut found2 = 0;
+    let mut found3 = 0;
+    for v in chars.values() {
+        match v {
+            2 => found2 = 1,
+            3 => found3 = 1,
+            _ => {}
+        }
+    }
+    Found { found2, found3 }
+}
+
+fn part1(input: &str) -> Result<i32> {
+    let mut found = Found::new();
+    for row in input.split('\n') {
+        found += find(row);
+    }
+    Ok((found.found2 * found.found3) as i32)
 }
 
 fn part2(_input: &str) -> Result<i32> {
@@ -49,7 +83,55 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_part1() -> Result<()> {
-        Ok(assert_eq!(part1("")?, 0))
+    fn test_find() {
+        assert_eq!(
+            find("abcdef"),
+            Found {
+                found2: false,
+                found3: false
+            }
+        );
+        assert_eq!(
+            find("bababc"),
+            Found {
+                found2: true,
+                found3: true
+            }
+        );
+        assert_eq!(
+            find("abbcde"),
+            Found {
+                found2: true,
+                found3: false
+            }
+        );
+        assert_eq!(
+            find("abcccd"),
+            Found {
+                found2: false,
+                found3: true
+            }
+        );
+        assert_eq!(
+            find("aabcdd"),
+            Found {
+                found2: true,
+                found3: false
+            }
+        );
+        assert_eq!(
+            find("abcdee"),
+            Found {
+                found2: true,
+                found3: false
+            }
+        );
+        assert_eq!(
+            find("ababab"),
+            Found {
+                found2: false,
+                found3: true
+            }
+        );
     }
 }
