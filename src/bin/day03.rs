@@ -3,12 +3,57 @@ use nom::{call, digit, do_parse, error_position, map_res, named, tag};
 // use std::str::{self, FromStr};
 use nom::types::CompleteStr;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 struct Claim {
     top: usize,
     left: usize,
     width: usize,
     height: usize,
+}
+
+impl Claim {
+    fn walk(self) -> ClaimWalker {
+        ClaimWalker {
+            claim: self.clone(),
+            y: self.top,
+            x: self.left,
+        }
+    }
+}
+
+struct ClaimWalker {
+    claim: Claim,
+    x: usize,
+    y: usize,
+}
+
+#[derive(Debug, PartialEq)]
+struct Point {
+    x: usize,
+    y: usize,
+}
+
+impl Iterator for ClaimWalker {
+    type Item = Point;
+
+    fn next(&mut self) -> Option<Point> {
+        let res = Some(Point {
+            x: self.x,
+            y: self.y,
+        });
+
+        if self.y >= self.claim.top + self.claim.height {
+            return None;
+        }
+        self.x += 1;
+
+        if self.x >= self.claim.left + self.claim.width {
+            self.x = self.claim.left;
+            self.y += 1;
+        }
+
+        res
+    }
 }
 
 named!(pub positive_integer <CompleteStr, usize>,
@@ -36,6 +81,9 @@ fn main() {
 }
 
 fn part1(_input: &str) -> Result<i32> {
+    let (_, claim) = parse(CompleteStr("#123 @ 3,2: 5x4"))?;
+    let v: Vec<_> = claim.walk().collect();
+    println!("{:?}", v);
     Ok(0)
 }
 
