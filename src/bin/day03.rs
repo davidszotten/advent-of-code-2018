@@ -1,12 +1,11 @@
 use aoc2018::{dispatch, Result};
-use failure::err_msg;
+use failure::{err_msg, Error};
 use itertools::{Itertools, Product};
 use lazy_static::lazy_static;
-use nom::types::CompleteStr;
-use nom::{call, digit, do_parse, error_position, map_res, named, tag};
-use regex::Regex;
+use regex::{Regex, Captures};
 use std::collections::HashMap;
 use std::ops::Range;
+use std::str::FromStr;
 
 #[derive(Debug, PartialEq, Clone)]
 struct Claim {
@@ -22,46 +21,38 @@ impl Claim {
     }
 }
 
+impl FromStr for Claim {
+    type Err = Error;
 
-named!(pub positive_integer <CompleteStr, usize>,
-    map_res!(digit, |d: CompleteStr| d.parse())
-);
+    fn from_str(s: &str) -> Result<Self> {
+        lazy_static! {
+            static ref RE: Regex =
+                Regex::new(r"#\d+ @ (?P<left>\d+),(?P<top>\d+): (?P<width>\d+)+x(?P<height>\d+)+")
+                    .unwrap();
+        }
 
-named!(parse<CompleteStr, Claim>,
-  do_parse!(
-    tag!("#")   >>
-    positive_integer >>
-    tag!(" @ ") >>
-    left: positive_integer >>
-    tag!(",") >>
-    top: positive_integer >>
-    tag!(": ") >>
-    width: positive_integer >>
-    tag!("x") >>
-    height: positive_integer >>
-    (Claim { top, left, width, height })
-  )
-);
+        let caps = RE.captures(s).unwrap();
+        fn get_cap_int(caps: &Captures, name: &str) -> Result<usize> {
+            Ok(caps.name(name).ok_or(err_msg("parse fail"))?.as_str().parse()?)
+        }
+        Ok(Claim {
+            top: get_cap_int(&caps, "top")?,
+            left: get_cap_int(&caps, "left")?,
+            width: get_cap_int(&caps, "width")?,
+            height: get_cap_int(&caps, "height")?,
+        })
+    }
+}
+
 
 fn main() {
     dispatch(&part1, &part2)
 }
 
 fn part1(input: &str) -> Result<usize> {
-    lazy_static! {
-        static ref RE: Regex =
-            Regex::new(r"#\d+ @ (?P<left>\d+),(?P<top>\d+): (?P<width>\d+)+x(?P<height>\d+)+")
-                .unwrap();
-    }
     let mut fabric = HashMap::new();
     for row in input.split('\n') {
-        let caps = RE.captures(row).unwrap();
-        let claim = Claim {
-            top: caps.name("top").ok_or(err_msg(""))?.as_str().parse()?,
-            left: caps.name("left").ok_or(err_msg(""))?.as_str().parse()?,
-            width: caps.name("width").ok_or(err_msg(""))?.as_str().parse()?,
-            height: caps.name("height").ok_or(err_msg(""))?.as_str().parse()?,
-        };
+        let claim: Claim = row.parse()?;
         for point in claim.walk() {
             let count = fabric.entry(point).or_insert(0);
             *count += 1;
@@ -80,28 +71,17 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_positive_integer() -> Result<()> {
-        (assert_eq!(
-            positive_integer(CompleteStr("12")),
-            Ok((CompleteStr(""), 12))
-        ));
-        Ok(())
-    }
-
-    #[test]
-    fn test_part1() -> Result<()> {
-        (assert_eq!(
-            parse(CompleteStr("#12 @ 385,951: 10x7")),
-            Ok((
-                CompleteStr(""),
-                Claim {
-                    top: 951,
-                    left: 385,
-                    width: 10,
-                    height: 7
-                }
-            ))
-        ));
+    fn test_parse() -> Result<()> {
+        let claim: Claim = "#12 @ 385,951: 10x7".parse()?;
+        assert_eq!(
+            claim,
+            Claim {
+                top: 951,
+                left: 385,
+                width: 10,
+                height: 7
+            }
+        );
         Ok(())
     }
 }
