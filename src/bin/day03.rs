@@ -2,7 +2,7 @@ use aoc2018::{dispatch, Result};
 use failure::{err_msg, Error};
 use itertools::{Itertools, Product};
 use lazy_static::lazy_static;
-use regex::{Regex, Captures};
+use regex::{Captures, Regex};
 use std::collections::HashMap;
 use std::ops::Range;
 use std::str::FromStr;
@@ -27,14 +27,19 @@ impl FromStr for Claim {
 
     fn from_str(s: &str) -> Result<Self> {
         lazy_static! {
-            static ref RE: Regex =
-                Regex::new(r"#(?P<id>\d+) @ (?P<left>\d+),(?P<top>\d+): (?P<width>\d+)+x(?P<height>\d+)+")
-                    .unwrap();
+            static ref RE: Regex = Regex::new(
+                r"#(?P<id>\d+) @ (?P<left>\d+),(?P<top>\d+): (?P<width>\d+)+x(?P<height>\d+)+"
+            )
+            .unwrap();
         }
 
         let caps = RE.captures(s).unwrap();
         fn get_cap_int(caps: &Captures, name: &str) -> Result<usize> {
-            Ok(caps.name(name).ok_or(err_msg("parse fail"))?.as_str().parse()?)
+            Ok(caps
+                .name(name)
+                .ok_or(err_msg("parse fail"))?
+                .as_str()
+                .parse()?)
         }
         Ok(Claim {
             id: get_cap_int(&caps, "id")?,
@@ -45,7 +50,6 @@ impl FromStr for Claim {
         })
     }
 }
-
 
 fn main() {
     dispatch(&part1, &part2)
@@ -76,15 +80,11 @@ fn part2(input: &str) -> Result<usize> {
 
     for row in input.split('\n') {
         let claim: Claim = row.parse()?;
-        let mut ok = true;
-        for point in claim.walk() {
-            ok = match fabric.get(&point) {
-                None => false,
-                Some(&count) if count == 1 => ok,
-                Some(_) => false,
-            };
-        }
-        if ok {
+        if claim
+            .walk()
+            .filter_map(|point| fabric.get(&point))
+            .all(|&count| count == 1)
+        {
             return Ok(claim.id);
         }
     }
