@@ -9,6 +9,7 @@ use std::str::FromStr;
 
 #[derive(Debug, PartialEq, Clone)]
 struct Claim {
+    id: usize,
     top: usize,
     left: usize,
     width: usize,
@@ -16,7 +17,7 @@ struct Claim {
 }
 
 impl Claim {
-    fn walk(self) -> Product<Range<usize>, Range<usize>> {
+    fn walk(&self) -> Product<Range<usize>, Range<usize>> {
         (self.left..(self.left + self.width)).cartesian_product(self.top..(self.top + self.height))
     }
 }
@@ -27,7 +28,7 @@ impl FromStr for Claim {
     fn from_str(s: &str) -> Result<Self> {
         lazy_static! {
             static ref RE: Regex =
-                Regex::new(r"#\d+ @ (?P<left>\d+),(?P<top>\d+): (?P<width>\d+)+x(?P<height>\d+)+")
+                Regex::new(r"#(?P<id>\d+) @ (?P<left>\d+),(?P<top>\d+): (?P<width>\d+)+x(?P<height>\d+)+")
                     .unwrap();
         }
 
@@ -36,6 +37,7 @@ impl FromStr for Claim {
             Ok(caps.name(name).ok_or(err_msg("parse fail"))?.as_str().parse()?)
         }
         Ok(Claim {
+            id: get_cap_int(&caps, "id")?,
             top: get_cap_int(&caps, "top")?,
             left: get_cap_int(&caps, "left")?,
             width: get_cap_int(&caps, "width")?,
@@ -62,7 +64,30 @@ fn part1(input: &str) -> Result<usize> {
     Ok(fabric.values().filter(|&x| *x > 1).count())
 }
 
-fn part2(_input: &str) -> Result<i32> {
+fn part2(input: &str) -> Result<usize> {
+    let mut fabric = HashMap::new();
+    for row in input.split('\n') {
+        let claim: Claim = row.parse()?;
+        for point in claim.walk() {
+            let count = fabric.entry(point).or_insert(0);
+            *count += 1;
+        }
+    }
+
+    for row in input.split('\n') {
+        let claim: Claim = row.parse()?;
+        let mut ok = true;
+        for point in claim.walk() {
+            ok = match fabric.get(&point) {
+                None => false,
+                Some(&count) if count == 1 => ok,
+                Some(_) => false,
+            };
+        }
+        if ok {
+            return Ok(claim.id);
+        }
+    }
     Ok(0)
 }
 
@@ -76,6 +101,7 @@ mod tests {
         assert_eq!(
             claim,
             Claim {
+                id: 12,
                 top: 951,
                 left: 385,
                 width: 10,
