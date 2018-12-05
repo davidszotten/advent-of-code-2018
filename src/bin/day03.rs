@@ -1,6 +1,8 @@
 use aoc2018::{dispatch, Result};
 use nom::{call, digit, do_parse, error_position, map_res, named, tag};
+use itertools::{Itertools, Product};
 // use std::str::{self, FromStr};
+use std::ops::Range;
 use nom::types::CompleteStr;
 
 #[derive(Debug, PartialEq, Clone)]
@@ -14,17 +16,13 @@ struct Claim {
 impl Claim {
     fn walk(self) -> ClaimWalker {
         ClaimWalker {
-            claim: self.clone(),
-            y: self.top,
-            x: self.left,
+            iterator: (self.left..(self.left + self.width)).cartesian_product(self.top..(self.top + self.height))
         }
     }
 }
 
 struct ClaimWalker {
-    claim: Claim,
-    x: usize,
-    y: usize,
+    iterator: Product<Range<usize>, Range<usize>>
 }
 
 #[derive(Debug, PartialEq)]
@@ -37,22 +35,10 @@ impl Iterator for ClaimWalker {
     type Item = Point;
 
     fn next(&mut self) -> Option<Point> {
-        let res = Some(Point {
-            x: self.x,
-            y: self.y,
-        });
-
-        if self.y >= self.claim.top + self.claim.height {
-            return None;
+        if let Some((x, y)) = self.iterator.next() {
+            return Some(Point{x, y})
         }
-        self.x += 1;
-
-        if self.x >= self.claim.left + self.claim.width {
-            self.x = self.claim.left;
-            self.y += 1;
-        }
-
-        res
+        return None
     }
 }
 
