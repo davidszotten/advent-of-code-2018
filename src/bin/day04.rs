@@ -117,7 +117,7 @@ fn part1(input: &str) -> Result<u32> {
         }
     }
     let (&longest_sleeper, _) = guard_sleeps.iter().max_by_key(|&(_,  &sleeps)| sleeps.iter().sum::<usize>()).unwrap();
-    println!("longest_sleeper {:?}", longest_sleeper);
+    // println!("longest_sleeper {:?}", longest_sleeper);
     let sleeps = guard_sleeps.get(&longest_sleeper).unwrap();
 
     let (minute, _) = sleeps.iter().enumerate().max_by_key(|&(_, x)| x).unwrap();
