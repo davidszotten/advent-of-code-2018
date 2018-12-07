@@ -1,5 +1,6 @@
 use aoc2018::{dispatch, Result};
 use itertools::Itertools;
+use std::collections::HashSet;
 
 const DIFF: i8 = 'a' as i8 - 'A' as i8;
 
@@ -29,8 +30,8 @@ fn reduce(input: Vec<char>) -> Vec<char> {
     res
 }
 
-fn part1(input: &str) -> Result<usize> {
-    let mut chars: Vec<_> = input.chars().collect();
+fn full_reduce(chars: Vec<char>) -> usize {
+    let mut chars = chars;
     let mut prev_len = chars.len();
     loop {
         chars = reduce(chars);
@@ -39,12 +40,35 @@ fn part1(input: &str) -> Result<usize> {
         }
         prev_len = chars.len();
     }
-    // reduce(input)
-    Ok(prev_len)
+    prev_len
 }
 
-fn part2(_input: &str) -> Result<i32> {
-    Ok(0)
+fn part1(input: &str) -> Result<usize> {
+    let chars: Vec<_> = input.chars().collect();
+    Ok(full_reduce(chars))
+}
+
+fn part2(input: &str) -> Result<usize> {
+    let chars: Vec<_> = input.chars().collect();
+    let mut letters = HashSet::new();
+    for c in input.chars() {
+        letters.insert(c.to_ascii_uppercase());
+    }
+    let mut shortest = input.len();
+    for &letter in letters.iter() {
+        let lower = letter.to_ascii_lowercase();
+        let without = chars
+            .iter()
+            .filter(|&&c| c != letter && c != lower)
+            .map(|&c| c)
+            .collect();
+        let len = full_reduce(without);
+        if len < shortest {
+            shortest = len;
+        }
+    }
+    // println!("{:?}", letters);
+    Ok(shortest)
 }
 
 #[cfg(test)]
