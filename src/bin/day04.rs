@@ -82,7 +82,7 @@ fn main() {
     dispatch(&part1, &part2)
 }
 
-fn part1(input: &str) -> Result<u32> {
+fn guard_map(input: &str) -> Result<HashMap<u32, [usize; 60]>> {
     let mut records: Vec<Record> = input.split('\n').filter_map(|row| row.parse().ok()).collect();
     records.sort();
 
@@ -94,7 +94,6 @@ fn part1(input: &str) -> Result<u32> {
     for record in records {
         match record.action {
             Action::StartShift(id) => {
-                // println!("a {}, {:?}", id, &sleeps[..]);
                 sleeps = guard_sleeps.entry(id).or_insert([0; 60]);
             }
             Action::FallsAsleep => sleep = record.minute as usize,
@@ -116,8 +115,12 @@ fn part1(input: &str) -> Result<u32> {
             },
         }
     }
+    Ok(guard_sleeps)
+}
+
+fn part1(input: &str) -> Result<u32> {
+    let guard_sleeps = guard_map(&input)?;
     let (&longest_sleeper, _) = guard_sleeps.iter().max_by_key(|&(_,  &sleeps)| sleeps.iter().sum::<usize>()).unwrap();
-    // println!("longest_sleeper {:?}", longest_sleeper);
     let sleeps = guard_sleeps.get(&longest_sleeper).unwrap();
 
     let (minute, _) = sleeps.iter().enumerate().max_by_key(|&(_, x)| x).unwrap();
@@ -125,13 +128,37 @@ fn part1(input: &str) -> Result<u32> {
     Ok(longest_sleeper * minute as u32)
 }
 
-fn part2(_input: &str) -> Result<i32> {
-    Ok(0)
+fn part2(input: &str) -> Result<u32> {
+    let guard_sleeps = guard_map(&input)?;
+    let (&longest_sleeper, _) = guard_sleeps.iter().max_by_key(|&(_,  &sleeps)| *sleeps.iter().max().unwrap()).unwrap();
+    let sleeps = guard_sleeps.get(&longest_sleeper).unwrap();
+
+    let (minute, _) = sleeps.iter().enumerate().max_by_key(|&(_, x)| x).unwrap();
+
+    Ok(longest_sleeper * minute as u32)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    const INPUT: &str = "[1518-11-01 00:00] Guard #10 begins shift
+[1518-11-01 00:05] falls asleep
+[1518-11-01 00:25] wakes up
+[1518-11-01 00:30] falls asleep
+[1518-11-01 00:55] wakes up
+[1518-11-01 23:58] Guard #99 begins shift
+[1518-11-02 00:40] falls asleep
+[1518-11-02 00:50] wakes up
+[1518-11-03 00:05] Guard #10 begins shift
+[1518-11-03 00:24] falls asleep
+[1518-11-03 00:29] wakes up
+[1518-11-04 00:02] Guard #99 begins shift
+[1518-11-04 00:36] falls asleep
+[1518-11-04 00:46] wakes up
+[1518-11-05 00:03] Guard #99 begins shift
+[1518-11-05 00:45] falls asleep
+[1518-11-05 00:55] wakes up";
 
     #[test]
     fn test_parse_begin() -> Result<()> {
@@ -186,24 +213,15 @@ mod tests {
 
     #[test]
     fn test_part1() -> Result<()> {
-        let res = part1("[1518-11-01 00:00] Guard #10 begins shift
-[1518-11-01 00:05] falls asleep
-[1518-11-01 00:25] wakes up
-[1518-11-01 00:30] falls asleep
-[1518-11-01 00:55] wakes up
-[1518-11-01 23:58] Guard #99 begins shift
-[1518-11-02 00:40] falls asleep
-[1518-11-02 00:50] wakes up
-[1518-11-03 00:05] Guard #10 begins shift
-[1518-11-03 00:24] falls asleep
-[1518-11-03 00:29] wakes up
-[1518-11-04 00:02] Guard #99 begins shift
-[1518-11-04 00:36] falls asleep
-[1518-11-04 00:46] wakes up
-[1518-11-05 00:03] Guard #99 begins shift
-[1518-11-05 00:45] falls asleep
-[1518-11-05 00:55] wakes up")?;
+        let res = part1(INPUT)?;
         assert_eq!(res, 240);
+        Ok(())
+    }
+
+    #[test]
+    fn test_part2() -> Result<()> {
+        let res = part2(INPUT)?;
+        assert_eq!(res, 4455);
         Ok(())
     }
 }
