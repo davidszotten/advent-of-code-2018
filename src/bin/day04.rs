@@ -2,8 +2,8 @@ use aoc2018::{dispatch, Result};
 use failure::{err_msg, Error};
 use lazy_static::lazy_static;
 use regex::{Captures, Regex};
-use std::str::FromStr;
 use std::collections::HashMap;
+use std::str::FromStr;
 
 #[derive(Debug, PartialEq, Eq, Clone, PartialOrd, Ord)]
 enum Action {
@@ -64,8 +64,7 @@ impl FromStr for Record {
                 minute,
                 action: Action::FallsAsleep,
             })
-        }
-        else {
+        } else {
             Ok(Record {
                 year,
                 month,
@@ -83,14 +82,17 @@ fn main() {
 }
 
 fn guard_map(input: &str) -> Result<HashMap<u32, [usize; 60]>> {
-    let mut records: Vec<Record> = input.split('\n').filter_map(|row| row.parse().ok()).collect();
+    let mut records: Vec<Record> = input
+        .split('\n')
+        .filter_map(|row| row.parse().ok())
+        .collect();
     records.sort();
 
     let mut guard_sleeps: HashMap<u32, [usize; 60]> = HashMap::new();
 
     // let mut guard = 0;
     let mut sleep = 0;
-    let mut sleeps = &mut[0; 60];
+    let mut sleeps = &mut [0; 60];
     for record in records {
         match record.action {
             Action::StartShift(id) => {
@@ -103,7 +105,6 @@ fn guard_map(input: &str) -> Result<HashMap<u32, [usize; 60]>> {
                     for min in sleep..wake {
                         sleeps[min] += 1;
                     }
-
                 } else {
                     for min in sleep..60 {
                         sleeps[min] += 1;
@@ -112,7 +113,7 @@ fn guard_map(input: &str) -> Result<HashMap<u32, [usize; 60]>> {
                         sleeps[min] += 1;
                     }
                 }
-            },
+            }
         }
     }
     Ok(guard_sleeps)
@@ -120,7 +121,10 @@ fn guard_map(input: &str) -> Result<HashMap<u32, [usize; 60]>> {
 
 fn part1(input: &str) -> Result<u32> {
     let guard_sleeps = guard_map(&input)?;
-    let (&longest_sleeper, _) = guard_sleeps.iter().max_by_key(|&(_,  &sleeps)| sleeps.iter().sum::<usize>()).unwrap();
+    let (&longest_sleeper, _) = guard_sleeps
+        .iter()
+        .max_by_key(|&(_, &sleeps)| sleeps.iter().sum::<usize>())
+        .unwrap();
     let sleeps = guard_sleeps.get(&longest_sleeper).unwrap();
 
     let (minute, _) = sleeps.iter().enumerate().max_by_key(|&(_, x)| x).unwrap();
@@ -130,8 +134,13 @@ fn part1(input: &str) -> Result<u32> {
 
 fn part2(input: &str) -> Result<u32> {
     let guard_sleeps = guard_map(&input)?;
-    let (&longest_sleeper, _) = guard_sleeps.iter().max_by_key(|&(_,  &sleeps)| *sleeps.iter().max().unwrap()).unwrap();
-    let sleeps = guard_sleeps.get(&longest_sleeper).unwrap();
+    let (&longest_sleeper, _) = guard_sleeps
+        .iter()
+        .max_by_key(|&(_, &sleeps)| *sleeps.iter().max().unwrap())
+        .unwrap();
+    let sleeps = guard_sleeps
+        .get(&longest_sleeper)
+        .ok_or(err_msg("longest sleeper not found"))?;
 
     let (minute, _) = sleeps.iter().enumerate().max_by_key(|&(_, x)| x).unwrap();
 
