@@ -4,7 +4,7 @@ fn main() {
     dispatch(&part1, &part2)
 }
 
-fn parse(data: &mut impl Iterator<Item=u32>) -> u32 {
+fn parse(data: &mut impl Iterator<Item = u32>) -> u32 {
     let n_children = data.next().expect("not enough data to read n_children");
     let n_metadata = data.next().expect("not enough data to read n_metadata");
     let mut metadata = 0;
@@ -18,11 +18,13 @@ fn parse(data: &mut impl Iterator<Item=u32>) -> u32 {
 }
 
 fn part1(input: &str) -> Result<u32> {
-    let mut data = input.split_whitespace().filter_map(|d| d.parse::<u32>().ok());
+    let mut data = input
+        .split_whitespace()
+        .filter_map(|d| d.parse::<u32>().ok());
     Ok(parse(&mut data))
 }
 
-fn parse2(data: &mut impl Iterator<Item=u32>) -> u32 {
+fn parse2(data: &mut impl Iterator<Item = u32>) -> u32 {
     let n_children = data.next().expect("not enough data to read n_children");
     let n_metadata = data.next().expect("not enough data to read n_metadata");
     let mut metadata = 0;
@@ -46,7 +48,9 @@ fn parse2(data: &mut impl Iterator<Item=u32>) -> u32 {
 }
 
 fn part2(input: &str) -> Result<u32> {
-    let mut data = input.split_whitespace().filter_map(|d| d.parse::<u32>().ok());
+    let mut data = input
+        .split_whitespace()
+        .filter_map(|d| d.parse::<u32>().ok());
     Ok(parse2(&mut data))
 }
 
@@ -56,11 +60,17 @@ mod tests {
 
     #[test]
     fn test_part1() -> Result<()> {
-        Ok(assert_eq!(part1("2 3 0 3 10 11 12 1 1 0 1 99 2 1 1 2")?, 138))
+        Ok(assert_eq!(
+            part1("2 3 0 3 10 11 12 1 1 0 1 99 2 1 1 2")?,
+            138
+        ))
     }
 
     #[test]
     fn test_part2() -> Result<()> {
-        Ok(assert_eq!(part2("2 3 0 3 10 11 12 1 1 0 1 99 2 1 1 2")?, 66))
+        Ok(assert_eq!(
+            part2("2 3 0 3 10 11 12 1 1 0 1 99 2 1 1 2")?,
+            66
+        ))
     }
 }

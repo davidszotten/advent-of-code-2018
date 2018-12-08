@@ -20,10 +20,9 @@ impl FromStr for Instruction {
 
     fn from_str(s: &str) -> Result<Self> {
         lazy_static! {
-            static ref RE: Regex = Regex::new(
-                r"Step (.) must be finished before step (.) can begin."
-            )
-            .expect("regex create");
+            static ref RE: Regex =
+                Regex::new(r"Step (.) must be finished before step (.) can begin.")
+                    .expect("regex create");
         }
 
         let caps = RE.captures(s).expect("regex match");
