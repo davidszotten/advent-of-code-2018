@@ -52,13 +52,7 @@ enum Distance {
     Best(i32, usize),
 }
 
-// #[derive(Debug)]
-// enum Region {
-// Infinite,
-// Finite(u32),
-// }
-
-fn parse(input: &str) -> (HashMap<i32, Distance>, Point) {
+fn parse_distances(input: &str) -> (HashMap<i32, Distance>, Point) {
     use self::Distance::*;
 
     let mut distances = HashMap::new();
@@ -90,7 +84,7 @@ fn parse(input: &str) -> (HashMap<i32, Distance>, Point) {
     (distances, Point::new(maxx, maxy))
 }
 
-fn print(distances: &HashMap<i32, Distance>, max: &Point) {
+fn _print(distances: &HashMap<i32, Distance>, max: &Point) {
     use self::Distance::*;
     let maxx = max.x;
     let maxy = max.y;
@@ -110,14 +104,70 @@ fn print(distances: &HashMap<i32, Distance>, max: &Point) {
     }
 }
 
-fn part1(input: &str) -> Result<i32> {
-    let (distances, max) = parse(input);
-    print(&distances, &max);
-    Ok(0)
+#[derive(Debug)]
+enum Region {
+    Infinite,
+    Finite(u32),
 }
 
-fn part2(_input: &str) -> Result<i32> {
-    Ok(0)
+fn part1(input: &str) -> Result<u32> {
+    use self::Distance::*;
+    use self::Region::*;
+    let mut regions = HashMap::new();
+    let (distances, max) = parse_distances(input);
+    let maxx = max.x;
+    let maxy = max.y;
+    for y in 0..maxy {
+        for x in 0..maxx {
+            if let Some(Best(_, i)) = distances.get(&(x + maxx * y)) {
+                let new = match regions.get(i) {
+                    None => Finite(1),
+                    Some(Infinite) => Infinite,
+                    Some(Finite(count)) => Finite(count + 1),
+                };
+                if x == 0 || x == maxx - 1 || y == 0 || y == maxy - 1 {
+                    regions.insert(i, Infinite);
+                } else {
+                    regions.insert(i, new);
+                }
+            };
+        }
+    }
+    // _print(&distances, &max);
+    // println!("{:?}", regions);
+    Ok(*regions
+        .values()
+        .filter_map(|r| if let Finite(c) = r { Some(c) } else { None })
+        .max()
+        .unwrap())
+}
+
+fn area(input: &str, max_distance: i32) -> i32 {
+    let points: Vec<Point> = input
+        .split('\n')
+        .filter_map(|row| row.parse().ok())
+        .collect();
+
+    let mut area = 0;
+    let maxx = points.iter().map(|p| p.x).max().unwrap() + 1;
+    let maxy = points.iter().map(|p| p.y).max().unwrap() + 1;
+    for x in 0..maxx {
+        for y in 0..maxy {
+            let total_distance: i32 = points
+                .iter()
+                .map(|point| (point.x - x).abs() + (point.y - y).abs())
+                .sum();
+
+            if total_distance < max_distance {
+                area += 1;
+            }
+        }
+    }
+    area
+}
+
+fn part2(input: &str) -> Result<i32> {
+    Ok(area(input, 10000))
 }
 
 #[cfg(test)]
@@ -135,7 +185,23 @@ mod tests {
 5, 5
 8, 9"
             )?,
-            1
+            17
         ))
+    }
+
+    #[test]
+    fn test_part2() {
+        assert_eq!(
+            area(
+                "1, 1
+1, 6
+8, 3
+3, 4
+5, 5
+8, 9",
+                32
+            ),
+            16
+        )
     }
 }
