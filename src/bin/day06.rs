@@ -52,7 +52,13 @@ enum Distance {
     Best(i32, usize),
 }
 
-fn part1(input: &str) -> Result<i32> {
+// #[derive(Debug)]
+// enum Region {
+// Infinite,
+// Finite(u32),
+// }
+
+fn parse(input: &str) -> (HashMap<i32, Distance>, Point) {
     use self::Distance::*;
 
     let mut distances = HashMap::new();
@@ -81,6 +87,13 @@ fn part1(input: &str) -> Result<i32> {
             }
         }
     }
+    (distances, Point::new(maxx, maxy))
+}
+
+fn print(distances: &HashMap<i32, Distance>, max: &Point) {
+    use self::Distance::*;
+    let maxx = max.x;
+    let maxy = max.y;
     // println!("{:?}", distances);
     for y in 0..maxy {
         for x in 0..maxx {
@@ -94,10 +107,12 @@ fn part1(input: &str) -> Result<i32> {
             print!("{}", c);
         }
         println!("");
-        // for x in 0..maxx {
-            // println!("{:?}", distances.get(&(x + maxx * y)));
-        // }
     }
+}
+
+fn part1(input: &str) -> Result<i32> {
+    let (distances, max) = parse(input);
+    print(&distances, &max);
     Ok(0)
 }
 
