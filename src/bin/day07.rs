@@ -33,7 +33,7 @@ impl FromStr for Instruction {
     }
 }
 
-fn part1(input: &str) -> Result<String> {
+fn get_dependencies(input: &str) -> (HashMap<char, HashSet<char>>, HashSet<char>) {
     let instructions: Vec<Instruction> = input
         .split('\n')
         .filter_map(|row| row.parse().ok())
@@ -48,6 +48,11 @@ fn part1(input: &str) -> Result<String> {
             .or_insert(HashSet::new());
         (*entry).insert(instruction.first);
     }
+    (dependencies, all)
+}
+
+fn part1(input: &str) -> Result<String> {
+    let (mut dependencies, mut all) = get_dependencies(input);
     let mut steps = vec![];
     loop {
         if all.is_empty() {
