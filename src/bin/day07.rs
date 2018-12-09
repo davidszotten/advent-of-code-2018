@@ -76,8 +76,55 @@ fn part1(input: &str) -> Result<String> {
     Ok(steps.iter().collect())
 }
 
-fn part2(_input: &str) -> Result<i32> {
-    Ok(0)
+fn work(input: &str, n_workers: usize, cost: u32) -> u32 {
+    let (mut dependencies, mut all) = get_dependencies(input);
+    let mut steps = 0;
+    let mut workers = vec![('.', 0); n_workers];
+    loop {
+        if all.is_empty() && workers.iter().all(|w| w.1 == 0) {
+            break;
+        }
+        let dependees: HashSet<char> = dependencies.keys().map(|c| *c).collect();
+        let mut ready: Vec<char> = all.difference(&dependees).map(|c| *c).collect();
+        ready.sort();
+        ready.reverse();
+        for i in 0..n_workers {
+            if workers[i].1 == 0 {
+                if let Some(next) = ready.pop() {
+                    workers[i] = (next, cost + (next as u32 - 'A' as u32) + 1);
+                    all.remove(&next);
+                } else {
+                    break;
+                }
+            }
+        }
+        for i in 0..n_workers {
+            if workers[i].1 > 0 {
+                workers[i] = (workers[i].0, workers[i].1 - 1);
+            }
+            if workers[i].1 == 0 && workers[i].0 != '.' {
+                let ready_char = workers[i].0;
+                // println!("ready: {}, {}", i, ready_char);
+                workers[i] = ('.', 0);
+                let keys = dependencies.keys().map(|c| *c).collect::<Vec<_>>();
+                for key in keys {
+                    let value = dependencies.get_mut(&key).unwrap();
+                    value.remove(&ready_char);
+                    if value.is_empty() {
+                        dependencies.remove(&key);
+                    }
+                }
+            }
+        }
+        // println!("step: {:3}, workers: {:?}", steps, workers);
+        // println!("{:?}", dependencies);
+        steps += 1;
+    }
+    steps
+}
+
+fn part2(input: &str) -> Result<u32> {
+    Ok(work(input, 5, 60))
 }
 
 #[cfg(test)]
@@ -95,5 +142,10 @@ Step F must be finished before step E can begin.";
     #[test]
     fn test_part1() -> Result<()> {
         Ok(assert_eq!(part1(INPUT)?, "CABDFE"))
+    }
+
+    #[test]
+    fn test_part2() {
+        assert_eq!(work(INPUT, 2, 0), 15)
     }
 }
