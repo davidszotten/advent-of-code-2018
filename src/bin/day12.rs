@@ -77,7 +77,7 @@ fn part1(input: &str) -> Result<i32> {
         .sum())
 }
 
-fn part2(input: &str) -> Result<i32> {
+fn part2(input: &str) -> Result<String> {
     let mut rows = input.split('\n');
     let initial = rows
         .next()
@@ -93,9 +93,11 @@ fn part2(input: &str) -> Result<i32> {
     let rule_map: HashMap<_, bool> = rules.iter().map(|r| (&r.before[..], r.after)).collect();
     let mut start_pos = 0;
     let mut prev;
+    let mut prev_score = 0;
     let mut pots = vec![];
     pots.extend(&initial);
-    for _ in 0..200 {
+    let mut generation = 1;
+    loop {
         let step = |w| *rule_map.get(&w).unwrap_or(&false);
         prev = pots.clone();
         for _ in 0..4 {
@@ -104,25 +106,22 @@ fn part2(input: &str) -> Result<i32> {
         }
         start_pos -= 2;
         pots = pots.windows(5).map(step).collect();
+        let score = pots
+            .iter()
+            .enumerate()
+            .map(|(i, &p)| if p { i as i64 + start_pos } else { 0 })
+            .sum();
 
         if prev.iter().zip(pots.iter().skip(3)).all(|(a, b)| a == b) {
-            println!(
+            return Ok(format!(
                 "{}",
-                pots.iter()
-                    .enumerate()
-                    .map(|(i, &p)| if p { i as i32 + start_pos } else { 0 })
-                    .sum::<i32>()
-            );
+                score + (50_000_000_000 - generation) * (score - prev_score)
+            ));
         }
+        prev_score = score;
+        generation += 1;
     }
-    Ok(pots
-        .iter()
-        .enumerate()
-        .map(|(i, &p)| if p { i as i32 + start_pos } else { 0 })
-        .sum())
 }
-
-// eventually the same pattern just slides to the left, increasing value by 73 each time
 
 #[cfg(test)]
 mod tests {
