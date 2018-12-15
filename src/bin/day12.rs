@@ -1,5 +1,5 @@
 use aoc2018::{dispatch, Result};
-use failure::{Error};
+use failure::Error;
 use std::collections::HashMap;
 use std::str::FromStr;
 
@@ -16,7 +16,7 @@ fn char_to_bool(c: char) -> Option<bool> {
     match c {
         '.' => Some(false),
         '#' => Some(true),
-        _ => None
+        _ => None,
     }
 }
 
@@ -29,21 +29,33 @@ impl FromStr for Rule {
         let right = parts.nth(1).expect("right");
 
         let before = left.chars().filter_map(char_to_bool).collect::<Vec<_>>();
-        let after = right.chars().filter_map(char_to_bool).nth(0).expect("after");
+        let after = right
+            .chars()
+            .filter_map(char_to_bool)
+            .nth(0)
+            .expect("after");
 
-        Ok(Rule { before, after})
+        Ok(Rule { before, after })
     }
 }
 
 fn part1(input: &str) -> Result<i32> {
     let mut rows = input.split('\n');
-    let initial = rows.next().expect("next").split_whitespace().nth(2).expect("1").chars().filter_map(char_to_bool).collect::<Vec<_>>();
+    let initial = rows
+        .next()
+        .expect("next")
+        .split_whitespace()
+        .nth(2)
+        .expect("1")
+        .chars()
+        .filter_map(char_to_bool)
+        .collect::<Vec<_>>();
     rows.next();
     let rules: Vec<Rule> = rows.filter_map(|row| row.parse().ok()).collect();
     let rule_map: HashMap<_, bool> = rules.iter().map(|r| (&r.before[..], r.after)).collect();
     // println!("{:?}", rule_map);
     // println!("{:?}", initial.iter().map(|&b| if b {'#'} else {'.'}).collect::<String>());
-    let mut pots = vec![false;60];
+    let mut pots = vec![false; 60];
     pots.extend(&initial);
     pots.extend(&vec![false; 60]);
     // println!("{}", pots.len());
@@ -59,12 +71,58 @@ fn part1(input: &str) -> Result<i32> {
     }
     // println!("{}", pots.iter().map(|&b| if b {'#'} else {'.'}).collect::<String>());
     // println!("{:?}", (-20..(20+initial.len() as i32)).zip(pots.clone()).map(|(i, p)| if p {i} else {0}).collect::<Vec<_>>());
-    Ok((-20..(20+initial.len() as i32)).zip(pots).map(|(i, p)| if p {i} else {0}).sum())
+    Ok((-20..(20 + initial.len() as i32))
+        .zip(pots)
+        .map(|(i, p)| if p { i } else { 0 })
+        .sum())
 }
 
-fn part2(_input: &str) -> Result<i32> {
-    Ok(0)
+fn part2(input: &str) -> Result<i32> {
+    let mut rows = input.split('\n');
+    let initial = rows
+        .next()
+        .expect("next")
+        .split_whitespace()
+        .nth(2)
+        .expect("1")
+        .chars()
+        .filter_map(char_to_bool)
+        .collect::<Vec<_>>();
+    rows.next();
+    let rules: Vec<Rule> = rows.filter_map(|row| row.parse().ok()).collect();
+    let rule_map: HashMap<_, bool> = rules.iter().map(|r| (&r.before[..], r.after)).collect();
+    let mut start_pos = 0;
+    let mut prev;
+    let mut pots = vec![];
+    pots.extend(&initial);
+    for _ in 0..200 {
+        let step = |w| *rule_map.get(&w).unwrap_or(&false);
+        prev = pots.clone();
+        for _ in 0..4 {
+            pots.insert(0, false);
+            pots.push(false);
+        }
+        start_pos -= 2;
+        pots = pots.windows(5).map(step).collect();
+
+        if prev.iter().zip(pots.iter().skip(3)).all(|(a, b)| a == b) {
+            println!(
+                "{}",
+                pots.iter()
+                    .enumerate()
+                    .map(|(i, &p)| if p { i as i32 + start_pos } else { 0 })
+                    .sum::<i32>()
+            );
+        }
+    }
+    Ok(pots
+        .iter()
+        .enumerate()
+        .map(|(i, &p)| if p { i as i32 + start_pos } else { 0 })
+        .sum())
 }
+
+// eventually the same pattern just slides to the left, increasing value by 73 each time
 
 #[cfg(test)]
 mod tests {
