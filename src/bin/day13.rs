@@ -166,7 +166,9 @@ fn parse(c: &char) -> Result<Input> {
     }
 }
 
-fn part1(input: &str) -> Result<String> {
+type Coor = (usize, usize);
+
+fn parse_input(input: &str) -> (HashMap<Coor, Track>, HashMap<Coor, Train>) {
     let mut map = HashMap::new();
     let mut trains = HashMap::new();
 
@@ -180,10 +182,14 @@ fn part1(input: &str) -> Result<String> {
             }
         }
     }
+    (map, trains)
+}
 
+fn part1(input: &str) -> Result<String> {
+    let (map, mut trains) = parse_input(input);
     loop {
         let mut order: Vec<_> = trains.keys().map(|&t| t.clone()).collect();
-        order.sort_by_key(|&(x,y)| (y, x));
+        order.sort_by_key(|&(x, y)| (y, x));
         for pos in order {
             let mut train = trains.remove(&pos).expect("coor missing for remove");
             let next_pos = train.step(pos);
@@ -194,12 +200,33 @@ fn part1(input: &str) -> Result<String> {
             train.turn(track);
             trains.insert(next_pos, train);
         }
-
     }
 }
 
-fn part2(_input: &str) -> Result<i32> {
-    Ok(0)
+fn part2(input: &str) -> Result<String> {
+    let (map, mut trains) = parse_input(input);
+    loop {
+        let mut order: Vec<_> = trains.keys().map(|&t| t.clone()).collect();
+        if order.len() == 1 {
+            return Ok(format!("{:?}", order[0]));
+        }
+        order.sort_by_key(|&(x, y)| (y, x));
+        for pos in order {
+            let mut remove = false;
+            if let Some(mut train) = trains.remove(&pos) {
+                let next_pos = train.step(pos);
+                if trains.contains_key(&next_pos) {
+                    trains.remove(&next_pos);
+                    remove = true;
+                }
+                let track = map.get(&next_pos).expect("next coor missing");
+                train.turn(track);
+                if !remove {
+                    trains.insert(next_pos, train);
+                }
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -216,5 +243,21 @@ mod tests {
     #[test]
     fn test_part1() -> Result<()> {
         Ok(assert_eq!(part1(INPUT)?, "(7, 3)"))
+    }
+
+    #[test]
+    fn test_part2() -> Result<()> {
+        Ok(assert_eq!(
+            part2(
+                r"/>-<\
+|   |
+| /<+-\
+| | | v
+\>+</ |
+  |   ^
+  \<->/"
+            )?,
+            "(6, 4)"
+        ))
     }
 }
