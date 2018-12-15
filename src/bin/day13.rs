@@ -173,25 +173,15 @@ fn part1(input: &str) -> Result<String> {
     for (y, row) in input.split('\n').enumerate() {
         for (x, c) in row.chars().enumerate() {
             if let Ok(parsed) = parse(&c) {
-                // println!("{:?} {:?}", (x, y), parsed.track);
                 map.insert((x, y), parsed.track);
                 if let Some(direction) = parsed.train {
-                    // println!("train: {:?}", direction);
                     trains.insert((x, y), Train::new(direction));
                 }
             }
         }
     }
 
-    // let mut steps = 0;
     loop {
-        // println!("trains: {:?}", trains);
-        // println!("{:?}", (x, y));
-        // let pos = trains
-        //     .keys()
-        //     .max_by_key(|(x, y)| (y, x))
-        //     .expect("coor missing")
-        //     .clone();
         let mut order: Vec<_> = trains.keys().map(|&t| t.clone()).collect();
         order.sort_by_key(|&(x,y)| (y, x));
         for pos in order {
@@ -201,12 +191,10 @@ fn part1(input: &str) -> Result<String> {
                 return Ok(format!("{:?}", next_pos));
             }
             let track = map.get(&next_pos).expect("next coor missing");
-            // println!("turn: {:?} ({:?})", train, track);
             train.turn(track);
             trains.insert(next_pos, train);
         }
 
-        // steps += 1;
     }
 }
 
