@@ -4,7 +4,6 @@ fn main() {
     dispatch(&part1, &part2)
 }
 
-
 fn part1(input: &str) -> Result<String> {
     let rounds = input.parse::<usize>().unwrap();
 
@@ -61,8 +60,14 @@ fn part2(input: &str) -> Result<usize> {
             rounds += 1;
         }
 
-        if recipes.iter().rev().take(input.len()).zip(&target).all(|(a,b)| *a == *b) {
-            break
+        if recipes
+            .iter()
+            .rev()
+            .take(input.len())
+            .zip(&target)
+            .all(|(a, b)| *a == *b)
+        {
+            break;
         }
 
         recipes.push(sum % 10);
@@ -71,10 +76,15 @@ fn part2(input: &str) -> Result<usize> {
         e1 = (e1 + 1 + r1) % (recipes.len() as u32);
         e2 = (e2 + 1 + r2) % (recipes.len() as u32);
 
-        if recipes.iter().rev().take(input.len()).zip(&target).all(|(a,b)| *a == *b) {
-            break
+        if recipes
+            .iter()
+            .rev()
+            .take(input.len())
+            .zip(&target)
+            .all(|(a, b)| *a == *b)
+        {
+            break;
         }
-
     }
     Ok(rounds - input.len() + 2)
 }
