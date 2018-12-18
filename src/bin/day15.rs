@@ -40,6 +40,33 @@ struct Game {
 }
 
 impl Game {
+    fn round(&mut self) {
+        let mut order: Vec<_> = self.units.iter().collect();
+        order.sort_by_key(|((x,y), _)| (y, x));
+        for (coor, _) in order {
+            let mut neighbour_units = vec![];
+            for neighbour in self.adjacent(&coor).iter() {
+                if let Some(neighbour_unit) = self.units.get(neighbour) {
+                    neighbour_units.push(neighbour_unit.clone());
+                }
+            }
+            if neighbour_units.len() > 0 {
+                let unit = self.units.get(coor).expect("get unit");
+                // self.choose_and_attack(unit, *neighbour_units);
+            }
+        }
+
+    }
+
+    // fn choose_and_attack(&mut self, unit: &Unit, neighbour_units: &[Unit]) {
+
+    // }
+
+    fn adjacent(&self, coor: &Coor) -> [Coor; 4] {
+        let (x, y) = *coor;
+        [(x, y-1), (x- 1, y), (x+1, y), (x, y+1)]
+    }
+
     fn print(&self) {
         use self::Terrain::*;
         use self::UnitType::*;
@@ -112,7 +139,8 @@ impl Input {
 }
 
 fn part1(input: &str) -> Result<i32> {
-    let game: Game = input.parse()?;
+    let mut game: Game = input.parse()?;
+    game.round();
     game.print();
     Ok(0)
 }
