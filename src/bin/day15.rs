@@ -42,7 +42,7 @@ struct Game {
 impl Game {
     fn round(&mut self) {
         let mut order: Vec<_> = self.units.iter().collect();
-        order.sort_by_key(|((x,y), _)| (y, x));
+        order.sort_by_key(|((x, y), _)| (y, x));
         for (coor, _) in order {
             let mut neighbour_units = vec![];
             for neighbour in self.adjacent(&coor).iter() {
@@ -55,7 +55,6 @@ impl Game {
                 // self.choose_and_attack(unit, *neighbour_units);
             }
         }
-
     }
 
     // fn choose_and_attack(&mut self, unit: &Unit, neighbour_units: &[Unit]) {
@@ -64,7 +63,7 @@ impl Game {
 
     fn adjacent(&self, coor: &Coor) -> [Coor; 4] {
         let (x, y) = *coor;
-        [(x, y-1), (x- 1, y), (x+1, y), (x, y+1)]
+        [(x, y - 1), (x - 1, y), (x + 1, y), (x, y + 1)]
     }
 
     fn print(&self) {

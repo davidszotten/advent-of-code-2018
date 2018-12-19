@@ -267,7 +267,7 @@ fn part2(input_str: &str) -> Result<i32> {
         }
     }
     println!("{:?}", ops);
-    let mut cpu = Cpu::new([0,0,0,0]);
+    let mut cpu = Cpu::new([0, 0, 0, 0]);
     let mut count = 0;
     for op in OpWalker::new(&input_str).skip(op_inputs) {
         count += 1;
