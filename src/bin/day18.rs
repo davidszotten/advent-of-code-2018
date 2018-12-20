@@ -152,14 +152,13 @@ impl FromStr for Area {
 fn part1(input: &str) -> Result<usize> {
     let mut area: Area = input.parse()?;
     let end = 10;
-    for _ in 0..(end+1) {
+    for _ in 0..(end + 1) {
         area.tick();
     }
 
     let rn = area.resources.get(&end).expect("end found");
     Ok(*rn)
 }
-
 
 fn part2(input: &str) -> Result<usize> {
     let mut area: Area = input.parse()?;
