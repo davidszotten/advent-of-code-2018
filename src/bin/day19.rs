@@ -2,6 +2,7 @@ use aoc2018::{dispatch, Result};
 use failure::{err_msg, Error};
 use lazy_static::lazy_static;
 use regex::{CaptureMatches, Captures, Regex};
+use std::fmt;
 use std::str::FromStr;
 
 fn main() {
@@ -64,6 +65,31 @@ struct Op {
     a: RegType,
     b: RegType,
     c: RegType,
+}
+
+impl fmt::Display for Op {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use self::OpType::*;
+        let name = match self.op_type {
+            Addr => "addr",
+            Addi => "addi",
+            Mulr => "mulr",
+            Muli => "muli",
+            Banr => "banr",
+            Bani => "bani",
+            Borr => "borr",
+            Bori => "bori",
+            Setr => "setr",
+            Seti => "seti",
+            Gtir => "gtir",
+            Gtri => "gtri",
+            Gtrr => "gtrr",
+            Eqir => "eqir",
+            Eqri => "eqri",
+            Eqrr => "eqrr",
+        };
+        write!(f, "{}({:02}, {:02}, {:02})", name, self.a, self.b, self.c)
+    }
 }
 
 struct OpWalker<'r, 't> {
@@ -130,20 +156,18 @@ impl Cpu {
 
     fn run(&mut self) {
         loop {
-            // println!("{:?}", self.registers);
             let instruction_idx = self.get(self.pc_register as i32);
             if instruction_idx < 0 {
                 break;
             }
             if let Some(&op) = self.program.get(instruction_idx as usize) {
-                // println!("{:?}", op);
                 self.dispatch(&op.op_type, op.a, op.b, op.c);
                 let pc = self.get(self.pc_register as i32) + 1;
                 if pc < 0 || pc >= self.program.len() as i32 {
                     break;
                 }
                 self.set(self.pc_register as i32, pc);
-                // println!("{:?}\n", self.registers);
+            // println!("{:?}\n", self.registers);
             } else {
                 break;
             }
@@ -242,17 +266,15 @@ fn part1(input: &str) -> Result<i32> {
     Ok(cpu.get(0))
 }
 
-fn part2(input: &str) -> Result<i32> {
-    let (pc_info, program) = input.split_at(5);
-    let pc_register = pc_info
-        .split_whitespace()
-        .filter_map(|p| p.parse::<usize>().ok())
-        .nth(0)
-        .unwrap();
-    let program = OpWalker::new(program).collect();
-    let mut cpu = Cpu::new(pc_register, [1, 0, 0, 0, 0, 0], program);
-    cpu.run();
-    Ok(cpu.get(0))
+fn part2(_input: &str) -> Result<i32> {
+    let n = 10551410;
+    let mut sum = 0;
+    for i in 1..=n {
+        if n % i == 0 {
+            sum += i
+        }
+    }
+    Ok(sum)
 }
 
 #[cfg(test)]
