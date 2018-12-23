@@ -5,19 +5,23 @@ fn main() {
     dispatch(&part1, &part2)
 }
 
+fn indent(level: usize) {
+    for _ in 0..level {
+        print!("\t");
+    }
+}
+
 // ^E(N|S)W$
+// ^E(N|S(E|N))$
 fn walk(input: &str, level: usize, so_far: Vec<Vec<char>>) -> (usize, Vec<Vec<char>>) {
-    // println!("start: {}, {}", input, level);
     let mut res: Vec<Vec<char>> = so_far;
-    // for prefix in so_far.iter() {
-    // let mut current: Vec<char> = prefix.iter().collect();
-    // let mut current = prefix.clone();
     let mut current: Vec<char> = vec![];
     let mut skip = 0;
     let mut consumed = 0;
 
     for (idx, c) in input.chars().enumerate() {
         if skip > 0 {
+            indent(level);
             println!("skipping {}", c);
             skip -= 1;
             continue;
@@ -27,11 +31,9 @@ fn walk(input: &str, level: usize, so_far: Vec<Vec<char>>) -> (usize, Vec<Vec<ch
             '^' => {}
             c @ 'N' | c @ 'S' | c @ 'E' | c @ 'W' => {
                 current.push(c);
-                // for entry in res.iter_mut() {
-                //     entry.push(c);
-                // }
             }
             '$' => {
+                indent(level);
                 println!("$: {:?} {:?}", res, current);
                 if res.len() > 0 {
                     for entry in res.iter_mut() {
@@ -42,80 +44,57 @@ fn walk(input: &str, level: usize, so_far: Vec<Vec<char>>) -> (usize, Vec<Vec<ch
                     res.push(current);
                     current = vec![];
                 }
+                indent(level);
                 println!("$: {:?} {:?}", res, current);
             }
             '(' => {
                 for entry in res.iter_mut() {
                     entry.extend(current.clone());
                 }
+                indent(level);
+                println!("( {:?}", res);
                 current = vec![];
 
                 let mut new_res = vec![];
-                // let walked = walk(&input[idx + 1..], level + 1, res.clone());
                 let (to_skip, walked) = walk(&input[idx + 1..], level + 1, vec![]);
                 skip += to_skip;
+                indent(level);
                 println!("walked: {:?}", walked);
                 for option in walked.into_iter() {
                     for mut a in res.clone() {
+                        indent(level);
                         println!("have a: {:?}, option: {:?}", a, option);
                         a.extend(option.clone());
+                        indent(level);
                         println!("push {:?}", a);
                         new_res.push(a);
                     }
                 }
                 mem::swap(&mut new_res, &mut res);
+                indent(level);
                 println!("copied: {:?}", res);
-                // let mut copy1 = res.clone();
-                // let copy2 = res.clone();
-                // for (a, b) in copy1.iter_mut().cartesian_product(walk(&input[idx + 1..], level + 1, copy2).into_iter()) {
-                // a.extend(b);
-                // new_res.push(a);
-                // }
-                // println!("push1: {:?}", current.iter().collect::<Vec<char>>());
-                // res.push(current.iter().collect());
-                // println!("current1: {:?}", current);
-                // current = vec![];
-                // for option in walk(&input[idx + 1..], level + 1, res.clone()).into_iter() {
-                //     println!("push2: {:?}", option);
-                //     res.push(option);
-                // }
             }
             ')' => {
+                indent(level);
                 println!("closing bracket on lvl {}", level);
                 break;
             }
             '|' => {
-                // for entry in res.iter_mut() {
-                // entry.extend(current.clone());
-                // }
+                indent(level);
                 println!("before | {:?}", res);
                 res.push(current);
                 current = vec![];
+                indent(level);
                 println!("after | {:?}", res);
-                // println!("push3: {:?}", current.iter().collect::<Vec<char>>());
-                // res.push(current.iter().collect());
-                // println!("push3: {:?}", current);
-                // res.push(current);
-                // println!("current2: {:?}", current);
-                // current = vec![];
             }
             _ => unreachable!(),
         }
     }
-    // for entry in res.iter_mut() {
-    // entry.extend(current.clone());
-    // }
 
     if current.len() > 0 {
         res.push(current);
     }
-
-    // println!("current3: {:?}", current);
-    // println!("push4: {:?}", current.iter().collect::<Vec<char>>());
-    // res.push(current.iter().collect());
-    // println!("push4: {:?}", current);
-    // res.push(current);
-    // }
+    indent(level);
     println!("returning lvl {} ({}, {:?})", level, consumed, res);
     (consumed, res)
 }
@@ -146,11 +125,23 @@ mod tests {
         );
     }
 
+    #[test]
+    fn test_walk3() {
+        assert_eq!(
+            walk("^E(N|S(E|N))$", 0, vec![vec![]]).1,
+            vec![vec!['E', 'N'], vec!['E', 'S', 'E'], vec!['E', 'S', 'N'],]
+        );
+    }
+
     // #[test]
-    // fn test_walk3() {
+    // fn test_walk4() {
     //     assert_eq!(
-    //         walk("^ENWWW(NEEE|SSE(EE|N))$", 0, vec![vec![]]),
-    //         vec!["W", "N", "E"]
+    //         walk("^ENWWW(NEEE|SSE(EE|N))$", 0, vec![vec![]]).1,
+    //         vec![
+    //             vec!['E', 'N',  'W', 'W', 'W', 'N', 'E', 'E', 'E'],
+    //             vec!['E', 'N',  'W', 'W', 'W', 'S', 'S', 'E', 'E', 'E'],
+    //             vec!['E', 'N',  'W', 'W', 'W', 'S', 'S', 'E', 'I', 'N'],
+    //         ]
     //     );
     // }
 
