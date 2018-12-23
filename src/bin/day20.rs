@@ -20,7 +20,7 @@ fn walk(input: &str, level: usize, so_far: Vec<Vec<char>>) -> (usize, Vec<Vec<ch
         if skip > 0 {
             println!("skipping {}", c);
             skip -= 1;
-            continue
+            continue;
         }
         consumed += 1;
         match c {
@@ -31,7 +31,19 @@ fn walk(input: &str, level: usize, so_far: Vec<Vec<char>>) -> (usize, Vec<Vec<ch
                 //     entry.push(c);
                 // }
             }
-            '$' => {}
+            '$' => {
+                println!("$: {:?} {:?}", res, current);
+                if res.len() > 0 {
+                    for entry in res.iter_mut() {
+                        entry.extend(current.clone());
+                    }
+                    current = vec![];
+                } else {
+                    res.push(current);
+                    current = vec![];
+                }
+                println!("$: {:?} {:?}", res, current);
+            }
             '(' => {
                 for entry in res.iter_mut() {
                     entry.extend(current.clone());
@@ -56,8 +68,8 @@ fn walk(input: &str, level: usize, so_far: Vec<Vec<char>>) -> (usize, Vec<Vec<ch
                 // let mut copy1 = res.clone();
                 // let copy2 = res.clone();
                 // for (a, b) in copy1.iter_mut().cartesian_product(walk(&input[idx + 1..], level + 1, copy2).into_iter()) {
-                    // a.extend(b);
-                    // new_res.push(a);
+                // a.extend(b);
+                // new_res.push(a);
                 // }
                 // println!("push1: {:?}", current.iter().collect::<Vec<char>>());
                 // res.push(current.iter().collect());
@@ -71,10 +83,10 @@ fn walk(input: &str, level: usize, so_far: Vec<Vec<char>>) -> (usize, Vec<Vec<ch
             ')' => {
                 println!("closing bracket on lvl {}", level);
                 break;
-            },
+            }
             '|' => {
                 // for entry in res.iter_mut() {
-                    // entry.extend(current.clone());
+                // entry.extend(current.clone());
                 // }
                 println!("before | {:?}", res);
                 res.push(current);
@@ -89,13 +101,14 @@ fn walk(input: &str, level: usize, so_far: Vec<Vec<char>>) -> (usize, Vec<Vec<ch
             }
             _ => unreachable!(),
         }
-
     }
     // for entry in res.iter_mut() {
-        // entry.extend(current.clone());
+    // entry.extend(current.clone());
     // }
 
-    res.push(current);
+    if current.len() > 0 {
+        res.push(current);
+    }
 
     // println!("current3: {:?}", current);
     // println!("push4: {:?}", current.iter().collect::<Vec<char>>());
