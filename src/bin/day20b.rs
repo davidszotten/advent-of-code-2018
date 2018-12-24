@@ -14,8 +14,6 @@ fn part2(_input: &str) -> Result<i32> {
     Ok(0)
 }
 
-// ^E(N|S)W$
-// ^E(N|S(E|N))$
 
 #[derive(Debug, Clone, PartialEq)]
 enum Pattern {
@@ -34,34 +32,10 @@ impl FromStr for Pattern {
         use self::Pattern::*;
         let mut res: Vec<Pattern> = vec![];
         let mut current = vec![];
-        let mut pending = vec![];
-        let mut pending_options = false;
         let mut or_mode = false;
-        let mut pending_brackets = 0;
-        for (_, c) in s.chars().enumerate() {
-            if pending_brackets > 0 {
-                match c {
-                    '|' => pending_options = true,
-                    '(' => pending_brackets += 1,
-                    ')' => pending_brackets -= 1,
-                    _ => {}
-                }
-                if pending_brackets > 0 {
-                    pending.push(c);
-                }
-                continue;
-            }
-            if !pending.is_empty() {
-                res.push(if pending_options {
-                    Partial(pending.iter().collect())
-                } else {
-                    // Literal(pending.iter().collect())
-                    Partial(pending.iter().collect())
-                });
-                // res.push(pending.clone());
-                pending.clear();
-                pending_options = false;
-            }
+        let mut chars = s.chars();
+
+        while let Some(c) = chars.next() {
             match c {
                 '^' | '$' => {}
                 c @ 'N' | c @ 'S' | c @ 'E' | c @ 'W' => {
@@ -72,14 +46,49 @@ impl FromStr for Pattern {
                         res.push(Partial(current.iter().collect()));
                         current = vec![];
                     }
-                    pending_brackets = 1;
+
+                    let mut pending = vec![];
+                    let mut level = 0;
+                    while let Some(c) = chars.next() {
+                        if c == '(' {
+                            level += 1;
+                        }
+                        if c == ')' {
+                            if level == 0 {
+                                break
+                            }
+                            level -= 1;
+                        }
+                        pending.push(c);
+                    }
+                    if !pending.is_empty() {
+                        res.push(Partial(pending.iter().collect()));
+                    }
                 }
                 '|' => {
+                    or_mode = true;
                     if !current.is_empty() {
                         res.push(Partial(current.iter().collect()));
                         current = vec![];
                     }
-                    or_mode = true;
+                    let mut pending = vec![];
+                    let mut level = 0;
+                    while let Some(c) = chars.next() {
+                        if c == '(' {
+                            level += 1;
+                        }
+                        if c == ')' {
+                            if level == 0 {
+                                res.push(Partial(pending.iter().collect()));
+                                pending = vec![];
+                            }
+                            level -= 1;
+                        }
+                        pending.push(c);
+                    }
+                    if !pending.is_empty() {
+                        res.push(Partial(pending.iter().collect()));
+                    }
                 }
                 ')' => {
                     if !current.is_empty() {
@@ -96,11 +105,9 @@ impl FromStr for Pattern {
                 .all(|c| c == 'N' || c == 'S' || c == 'E' || c == 'W')
         };
 
-        if !pending.is_empty() {
-            res.push(Partial(pending.iter().collect()))
+        if !current.is_empty() {
+            res.push(Partial(current.iter().collect()));
         }
-        // res.push(Partial(current.iter().collect()));
-        res.push(Partial(current.iter().collect()));
 
         let mode_str = if or_mode { "or" } else { "concat" };
         println!("res ({}): {:?}", mode_str, res);
