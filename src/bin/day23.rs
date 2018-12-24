@@ -78,12 +78,15 @@ fn part2(input: &str) -> Result<i32> {
     let min_y = bots.iter().min_by_key(|b| b.y).unwrap().y;
     let min_z = bots.iter().min_by_key(|b| b.z).unwrap().z;
     // let count = bots.iter().filter(|&b| b.distance(strongest) <= strongest.r).count();
-    println!("{}/{} {}/{} {}/{}", min_x, max_x, min_y, max_y, min_z, max_z);
+    println!(
+        "{}/{} {}/{} {}/{}",
+        min_x, max_x, min_y, max_y, min_z, max_z
+    );
     // let zero = Bot {
-        // x: 0,
-        // y: 0,
-        // z: 0,
-        // r: 0,
+    // x: 0,
+    // y: 0,
+    // z: 0,
+    // r: 0,
     // };
     let mut bot_count = 0;
     let mut best_dist = None;
@@ -99,7 +102,10 @@ fn part2(input: &str) -> Result<i32> {
                 // let tmp = Bot { x, y, z, r: 0 };
                 // let zero_dist = tmp.distance(&zero);
                 let zero_dist = x.abs() + y.abs() + z.abs();
-                let count = bots.iter().filter(|&b| b.p_distance(x,y,z) <= b.r).count();
+                let count = bots
+                    .iter()
+                    .filter(|&b| b.p_distance(x, y, z) <= b.r)
+                    .count();
                 // if count >= bot_count {
                 if count >= bot_count {
                     // println!("bar: {} {}", count, bot_count);
