@@ -1,7 +1,8 @@
 use aoc2018::{dispatch, Result};
 use lazy_static::lazy_static;
 use regex::{CaptureMatches, Captures, Regex};
-use std::collections::{HashSet, HashMap};
+use std::cmp::min;
+use std::collections::{HashMap, HashSet};
 
 fn main() {
     dispatch(&part1, &part2)
@@ -9,9 +10,7 @@ fn main() {
 
 #[derive(Debug, Clone)]
 struct Reindeer {
-    // immune_system: Vec<Unit>,
-    // infection: Vec<Unit>,
-    units: Vec<Unit>,
+    units: HashMap<UnitKey, Unit>,
 }
 
 impl Reindeer {
@@ -19,66 +18,98 @@ impl Reindeer {
         let immune_system_start = input.find("Immune System:").unwrap();
         let infection_start = input.find("Infection").unwrap();
 
-        let mut immune_system: Vec<_> = UnitWalker::new(UnitType::ImmuneSystem, &input[immune_system_start..infection_start]).collect();
+        let mut units = HashMap::new();
+        for unit in UnitWalker::new(
+            UnitType::ImmuneSystem,
+            &input[immune_system_start..infection_start],
+        ) {
+            units.insert((unit.unit_type, unit.id), unit);
+        }
 
-        let mut infection: Vec<_> = UnitWalker::new(UnitType::Infection, &input[infection_start..]).collect();
-        let mut units = vec![];
-        units.append(&mut immune_system);
-        units.append(&mut infection);
-        // Reindeer {immune_system, infection}
-        Reindeer {units}
+        for unit in UnitWalker::new(UnitType::Infection, &input[infection_start..]) {
+            units.insert((unit.unit_type, unit.id), unit);
+        }
+        Reindeer { units }
     }
 
-    fn fight(&mut self) {
-        // target selection
-        // let immune_system_target_map = HashMap::new();
-        // let infection_target_map = HashMap::new();
+    fn target(&self) -> HashMap<UnitKey, UnitKey> {
         let mut target_map = HashMap::new();
         let mut target_set = TargetSet::new();
-        let mut units = self.units.clone();
-        let (_immune_system, _infection): (Vec<_>, Vec<_>) = self.units.iter().partition(|u| match u.unit_type {UnitType::ImmuneSystem => true, UnitType::Infection => false});
+        let mut units = self.units.values().collect::<Vec<_>>();
         units.sort_by_key(|u| (u.effective_power(), u.initiative));
         units.reverse();
+        // println!("{:?}", self.units);
+        // println!("order: {:?}", units.iter().map(|u| (u.unit_type, u.id, u.effective_power(), u.initiative)).collect::<Vec<_>>());
         for unit in units.iter() {
-            // let target_map = target_map.for_type(unit.unit_type);
-            // let target_set = target_set.for_type(unit.unit_type);
-            let mut units_left: Vec<_> = self.units.iter().filter(|&u| u.unit_type != unit.unit_type).filter(|&u| !target_set.contains_for_type(unit.unit_type, &u.id)).collect();
+            let mut units_left: Vec<_> = self
+                .units
+                .values()
+                .filter(|&u| u.unit_type != unit.unit_type)
+                .filter(|&u| u.units > 0)
+                .filter(|&u| unit.damage_to(u) > 0)
+                .filter(|&u| !target_set.contains_for_type(unit.unit_type, &u.id))
+                .collect();
             units_left.sort_by_key(|&u| (unit.damage_to(u), u.effective_power(), u.initiative));
             units_left.reverse();
-            println!("{:?} {} left {:?}", unit.unit_type, unit.id, units_left.iter().map(|u| (u.id, unit.damage_to(u))).collect::<Vec<_>>());
+            // println!(
+            //     "{:?} {} left {:?}",
+            //     unit.unit_type,
+            //     unit.id,
+            //     units_left
+            //         .iter()
+            //         .map(|u| (u.id, unit.damage_to(u)))
+            //         .collect::<Vec<_>>()
+            // );
             if let Some(best) = units_left.first() {
                 target_map.insert((unit.unit_type, unit.id), (best.unit_type, best.id));
                 target_set.insert_for_type(unit.unit_type, best.id);
-                println!("{:?} {} -> {}", unit.unit_type, unit.id, best.id);
+                // println!("{:?} {} -> {}", unit.unit_type, unit.id, best.id);
             }
         }
-        units.sort_by_key(|u| u.initiative);
-        for unit in units {
-            if let Some(_target) = target_map.get(&(unit.unit_type, unit.id)) {
 
+        target_map
+    }
+
+    fn fight(&mut self) -> u32 {
+        loop {
+            // println!("");
+            let (immune_system, infection): (Vec<_>, Vec<_>) =
+                self.units.values().partition(|u| match u.unit_type {
+                    UnitType::ImmuneSystem => true,
+                    UnitType::Infection => false,
+                });
+            let immune_remaining = immune_system.iter().map(|u| u.units).sum::<u32>();
+            let infection_remaining = infection.iter().map(|u| u.units).sum::<u32>();
+            // println!("{}, {}", immune_remaining, infection_remaining);
+            if immune_remaining == 0 || infection_remaining == 0 {
+                break;
+            }
+            let target_map = self.target();
+            let mut unit_order: Vec<_> = self
+                .units
+                .values()
+                .map(|u| (u.initiative, u.key()))
+                .collect();
+            unit_order.sort_by_key(|t| t.0);
+            unit_order.reverse();
+
+            for (_, unit_key) in unit_order {
+                let unit = self.units.get(&unit_key).expect("attacker missing").clone();
+                if unit.units == 0 {
+                    continue;
+                }
+                if let Some(target_key) = target_map.get(&unit_key) {
+                    if let Some(entry) = self.units.get_mut(target_key) {
+                        (*entry).attacked_by(&unit);
+                    } else {
+                        panic!("target missing");
+                    }
+                }
             }
         }
+        self.units.values().map(|u| u.units).sum()
     }
 }
-
-// struct TargetMap {
-//     immune_system: HashMap<usize, usize>,
-//     infection: HashMap<usize, usize>,
-// }
-
-// impl TargetMap {
-//     fn new() -> Self {
-//         TargetMap{ immune_system: HashMap::new(),
-//         infection: HashMap::new(),}
-//     }
-
-//     // fn for_type(&self, unit_type: UnitType) -> &mut HashMap<usize, usize> {
-//     //     match unit_type {
-//     //         UnitType::ImmuneSystem => &mut self.immune_system,
-//     //         UnitType::Infection => &mut self.infection,
-//     //     }
-//     // }
-// }
 
 struct TargetSet {
     immune_system: HashSet<usize>,
@@ -87,8 +118,10 @@ struct TargetSet {
 
 impl TargetSet {
     fn new() -> Self {
-        TargetSet{ immune_system: HashSet::new(),
-        infection: HashSet::new(),}
+        TargetSet {
+            immune_system: HashSet::new(),
+            infection: HashSet::new(),
+        }
     }
 
     fn contains_for_type(&mut self, unit_type: UnitType, key: &usize) -> bool {
@@ -98,20 +131,12 @@ impl TargetSet {
         }
     }
 
-
     fn insert_for_type(&mut self, unit_type: UnitType, key: usize) {
         match unit_type {
             UnitType::ImmuneSystem => self.immune_system.insert(key),
             UnitType::Infection => self.infection.insert(key),
         };
     }
-
-    // fn for_type(&self, unit_type: UnitType) -> &mut HashSet<usize> {
-    //     match unit_type {
-    //         UnitType::ImmuneSystem => &mut self.immune_system,
-    //         UnitType::Infection => &mut self.infection,
-    //     }
-    // }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -119,6 +144,8 @@ enum UnitType {
     ImmuneSystem,
     Infection,
 }
+
+type UnitKey = (UnitType, usize);
 
 #[derive(Debug, Clone)]
 struct Unit {
@@ -141,8 +168,7 @@ impl Unit {
     fn damage_to(&self, other: &Unit) -> u32 {
         let factor = if other.immune.contains(&self.damage_type) {
             0
-        } else
-        if other.weak.contains(&self.damage_type) {
+        } else if other.weak.contains(&self.damage_type) {
             2
         } else {
             1
@@ -150,6 +176,17 @@ impl Unit {
         factor * self.effective_power()
     }
 
+    fn attacked_by(&mut self, other: &Unit) {
+        let damage = other.damage_to(self);
+        let potential_killed_units = damage / self.hit_points;
+        let killed_units = min(potential_killed_units, self.units);
+        // println!("{:?} {} attacks {}: damage: {}, units: {}, hit points: {}, killed {}", other.unit_type, other.id, self.id, damage, self.units, self.hit_points, killed_units);
+        self.units -= killed_units;
+    }
+
+    fn key(&self) -> UnitKey {
+        (self.unit_type, self.id)
+    }
 }
 
 struct UnitWalker<'r, 't> {
@@ -165,7 +202,11 @@ impl<'r, 't> UnitWalker<'r, 't> {
         }
 
         let caps = RE.captures_iter(s);
-        UnitWalker { caps, unit_type, counter: 0 }
+        UnitWalker {
+            caps,
+            unit_type,
+            counter: 0,
+        }
     }
 }
 
@@ -224,11 +265,10 @@ impl<'r, 't> Iterator for UnitWalker<'r, 't> {
     }
 }
 
-fn part1(input: &str) -> Result<i32> {
+fn part1(input: &str) -> Result<u32> {
     let mut reindeer = Reindeer::new(input);
     // println!("{:?}", reindeer);
-    reindeer.fight();
-    Ok(1)
+    Ok(reindeer.fight())
 }
 
 fn part2(_input: &str) -> Result<i32> {
@@ -247,6 +287,6 @@ mod tests {
 
 Infection:
 801 units each with 4706 hit points (weak to radiation) with an attack that does 116 bludgeoning damage at initiative 1
-4485 units each with 2961 hit points (immune to radiation; weak to fire, cold) with an attack that does 12 slashing damage at initiative 4")?, 0))
+4485 units each with 2961 hit points (immune to radiation; weak to fire, cold) with an attack that does 12 slashing damage at initiative 4")?, 5216))
     }
 }
