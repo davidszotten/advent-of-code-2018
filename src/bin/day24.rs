@@ -14,15 +14,16 @@ struct Reindeer {
 }
 
 impl Reindeer {
-    fn new(input: &str) -> Self {
+    fn new(input: &str, boost: u32) -> Self {
         let immune_system_start = input.find("Immune System:").unwrap();
         let infection_start = input.find("Infection").unwrap();
 
         let mut units = HashMap::new();
-        for unit in UnitWalker::new(
+        for mut unit in UnitWalker::new(
             UnitType::ImmuneSystem,
             &input[immune_system_start..infection_start],
         ) {
+            unit.damage += boost;
             units.insert((unit.unit_type, unit.id), unit);
         }
 
@@ -109,6 +110,10 @@ impl Reindeer {
         }
         self.units.values().map(|u| u.units).sum()
     }
+
+    fn remaining(&self) -> UnitType {
+        self.units.values().filter(|u| u.units > 0).next().unwrap().unit_type
+    }
 }
 
 struct TargetSet {
@@ -180,7 +185,7 @@ impl Unit {
         let damage = other.damage_to(self);
         let potential_killed_units = damage / self.hit_points;
         let killed_units = min(potential_killed_units, self.units);
-        // println!("{:?} {} attacks {}: damage: {}, units: {}, hit points: {}, killed {}", other.unit_type, other.id, self.id, damage, self.units, self.hit_points, killed_units);
+        // println!("{:?} {} attacks {}: damage: {}, units: {}, hit points: {}, potential: {}, killed {}", other.unit_type, other.id, self.id, damage, self.units, self.hit_points, potential_killed_units, killed_units);
         self.units -= killed_units;
     }
 
@@ -266,27 +271,47 @@ impl<'r, 't> Iterator for UnitWalker<'r, 't> {
 }
 
 fn part1(input: &str) -> Result<u32> {
-    let mut reindeer = Reindeer::new(input);
+    let mut reindeer = Reindeer::new(input, 0);
     // println!("{:?}", reindeer);
     Ok(reindeer.fight())
 }
 
-fn part2(_input: &str) -> Result<i32> {
-    Ok(0)
+fn part2(input: &str) -> Result<u32> {
+    let mut boost = 61;
+    Ok(loop {
+        let mut reindeer = Reindeer::new(input, boost);
+        let res = reindeer.fight();
+        if reindeer.remaining() == UnitType::ImmuneSystem {
+            break res
+        }
+        boost += 1;
+    })
 }
+
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_part1() -> Result<()> {
-        Ok(assert_eq!(part1("Immune System:
+    const INPUT: &str = "Immune System:
 17 units each with 5390 hit points (weak to radiation, bludgeoning) with an attack that does 4507 fire damage at initiative 2
 989 units each with 1274 hit points (immune to fire; weak to bludgeoning, slashing) with an attack that does 25 slashing damage at initiative 3
 
 Infection:
 801 units each with 4706 hit points (weak to radiation) with an attack that does 116 bludgeoning damage at initiative 1
-4485 units each with 2961 hit points (immune to radiation; weak to fire, cold) with an attack that does 12 slashing damage at initiative 4")?, 5216))
+4485 units each with 2961 hit points (immune to radiation; weak to fire, cold) with an attack that does 12 slashing damage at initiative 4";
+
+    #[test]
+    fn test_part1() -> Result<()> {
+        Ok(assert_eq!(part1(INPUT)?, 5216))
+    }
+
+    #[test]
+    fn test_boost() {
+        let mut reindeer = Reindeer::new(INPUT, 1570);
+        // println!("{:?}", reindeer);
+        let res = reindeer.fight();
+        assert_eq!(reindeer.remaining(), UnitType::ImmuneSystem);
+        assert_eq!(res, 51);
     }
 }
