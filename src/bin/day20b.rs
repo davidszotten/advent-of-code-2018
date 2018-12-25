@@ -21,17 +21,19 @@ fn part1(input: &str) -> Result<usize> {
     println!("{}/{}, {}/{}", min_x, max_x, min_y, max_y);
     for y in min_y..=max_y {
         for x in min_x..=max_x {
-            let north = seen.contains(&(Coor{x, y}, 'N'));
-            let south = seen.contains(&(Coor{x, y}, 'S'));
-            let east = seen.contains(&(Coor{x, y}, 'E'));
-            let west = seen.contains(&(Coor{x, y}, 'W'));
+            let north = seen.contains(&(Coor { x, y }, 'N'));
+            let south = seen.contains(&(Coor { x, y }, 'S'));
+            let east = seen.contains(&(Coor { x, y }, 'E'));
+            let west = seen.contains(&(Coor { x, y }, 'W'));
             let found = north || south || east || west;
-            let hmarker = |b| if b {"|"} else {"?"};
+            let hmarker = |b| if b { "|" } else { "?" };
             let cmarker = if (x, y) == (0, 0) {
                 "X"
             } else if found {
                 "."
-            } else { " " };
+            } else {
+                " "
+            };
             print!("{}{}{}", hmarker(west), cmarker, hmarker(east));
         }
         println!("");
