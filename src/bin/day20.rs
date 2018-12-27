@@ -1,5 +1,4 @@
 use aoc2018::{dispatch, Result};
-// use failure::{err_msg, Error};
 use failure::{Error};
 use std::collections::HashSet;
 use std::fmt;
@@ -90,7 +89,6 @@ enum Pattern {
     Literal(String),
     Concat(Vec<Pattern>),
     Or(Vec<Pattern>),
-    // Partial(String),
 }
 
 impl Pattern {
@@ -120,10 +118,8 @@ impl Pattern {
                     for p in v {
                         let ret = inner_walk(p, seen, pos);
                         seen = ret.0;
-                        // pos = ret.1;
                     }
                 }
-                // Partial(_) => panic!("can't walk partial"),
             }
             (seen, pos)
         }
@@ -144,6 +140,10 @@ impl FromStr for Pattern {
         let mut pos = 0;
 
         let mut bracket = 0;
+
+        if s.is_empty() {
+            return Ok(Literal("".into()));
+        }
 
         if &s[0..1] == "^" {
             return s[1..s.len() - 1].parse();
@@ -182,19 +182,19 @@ impl FromStr for Pattern {
             chunk_positions.push((chunk_start, pos));
         }
 
-        println!("{}", s);
-        println!("or: {:?}", or_positions);
-        let mut ostart = 0;
-        for &opos in or_positions.iter() {
-            println!("\t{:?}", &s[ostart..opos]);
-            ostart = opos + 1;
-        }
-        println!("\t{:?}", &s[ostart..]);
+        // println!("{}", s);
+        // println!("or: {:?}", or_positions);
+        // let mut ostart = 0;
+        // for &opos in or_positions.iter() {
+        //     println!("\t{:?}", &s[ostart..opos]);
+        //     ostart = opos + 1;
+        // }
+        // println!("\t{:?}", &s[ostart..]);
 
-        println!("chunk_positions: {:?}", chunk_positions);
-        for &(start, end) in chunk_positions.iter() {
-            println!("\t{:?}", &s[start..end]);
-        }
+        // println!("chunk_positions: {:?}", chunk_positions);
+        // for &(start, end) in chunk_positions.iter() {
+        //     println!("\t{:?}", &s[start..end]);
+        // }
 
         if !or_positions.is_empty() {
             let mut ors: Vec<Pattern> = vec![];
@@ -206,125 +206,23 @@ impl FromStr for Pattern {
             }
             ors.push(s[ostart..].parse()?);
 
-            println!("returning or: {:?}", ors);
+            // println!("returning or: {:?}", ors);
             return Ok(Or(ors));
         }
 
         if chunk_positions.len() == 1 {
-            println!("returning literal: {}", s);
+            // println!("returning literal: {}", s);
             return Ok(Literal(s.into()));
         }
 
         let mut chunks: Vec<Pattern> = vec![];
-        // Ok(Concat( chunk_positions.iter().map(|&(start, end)| s[start..end].parse::<Pattern>()?).collect()))
         for &(start, end) in chunk_positions.iter() {
-        // for &opos in or_positions.iter() {
             chunks.push(s[start..end].parse()?);
-            // ostart = opos + 1;
         }
-        println!("returning concat: {:?}", chunks);
+        // println!("returning concat: {:?}", chunks);
         Ok(Concat(chunks))
     }
 
-    // fn from_str(s: &str) -> Result<Self> {
-    //     // println!("parsing `{}`", s);
-
-    //     use self::Pattern::*;
-    //     let mut res: Vec<Pattern> = vec![];
-    //     let mut current = vec![];
-    //     let mut or_mode = false;
-    //     let mut chars = s.chars();
-
-    //     while let Some(c) = chars.next() {
-    //         match c {
-    //             '^' | '$' => {}
-    //             c @ 'N' | c @ 'S' | c @ 'E' | c @ 'W' => {
-    //                 current.push(c);
-    //             }
-    //             '(' => {
-    //                 if !current.is_empty() {
-    //                     res.push(Partial(current.iter().collect()));
-    //                     current = vec![];
-    //                 }
-
-    //                 let mut pending = vec![];
-    //                 let mut level = 0;
-    //                 while let Some(c) = chars.next() {
-    //                     if c == '(' {
-    //                         level += 1;
-    //                     }
-    //                     if c == ')' {
-    //                         if level == 0 {
-    //                             break;
-    //                         }
-    //                         level -= 1;
-    //                     }
-    //                     pending.push(c);
-    //                 }
-    //                 if !pending.is_empty() {
-    //                     res.push(Partial(pending.iter().collect()));
-    //                 }
-    //             }
-    //             '|' => {
-    //                 or_mode = true;
-    //                 if !current.is_empty() {
-    //                     res.push(Partial(current.iter().collect()));
-    //                     current = vec![];
-    //                 }
-    //                 let mut pending = vec![];
-    //                 let mut level = 0;
-    //                 while let Some(c) = chars.next() {
-    //                     if c == '(' {
-    //                         level += 1;
-    //                     }
-    //                     if c == ')' {
-    //                         if level == 0 {
-    //                             res.push(Partial(pending.iter().collect()));
-    //                             pending = vec![];
-    //                         }
-    //                         level -= 1;
-    //                     }
-    //                     pending.push(c);
-    //                 }
-    //                 if !pending.is_empty() {
-    //                     res.push(Partial(pending.iter().collect()));
-    //                 }
-    //             }
-    //             ')' => {
-    //                 if !current.is_empty() {
-    //                     res.push(Partial(current.iter().collect()));
-    //                     current = vec![];
-    //                 }
-    //             }
-    //             c => Err(err_msg(format!("parse fail: `{}`", c)))?,
-    //         }
-    //     }
-
-    //     let is_literal = |s: &str| {
-    //         s.chars()
-    //             .all(|c| c == 'N' || c == 'S' || c == 'E' || c == 'W')
-    //     };
-
-    //     if !current.is_empty() {
-    //         res.push(Partial(current.iter().collect()));
-    //     }
-
-    //     // let mode_str = if or_mode { "or" } else { "concat" };
-    //     // println!("res ({}): {:?}", mode_str, res);
-    //     let inside = res
-    //         .into_iter()
-    //         .map(|p| match p {
-    //             Partial(ref s) if is_literal(&s) => Literal(s.clone()),
-    //             Partial(s) => s.parse().expect("sub parsing"),
-    //             p => p,
-    //         })
-    //         // .filter(|p| if let Literal(s) = p && s == "" {false} else {true})
-    //         .collect();
-    //     let complete = if or_mode { Or(inside) } else { Concat(inside) };
-
-    //     println!("complete: {} -> {:?}", s, complete);
-    //     Ok(complete)
-    // }
 }
 
 #[cfg(test)]
@@ -364,7 +262,7 @@ mod tests {
         ))
     }
 
-    // #[test]
+    #[test]
     fn test_parse4() -> Result<()> {
         use self::Pattern::*;
         Ok(assert_eq!(
@@ -374,7 +272,7 @@ mod tests {
                 Or(vec![
                     Literal("N".into()),
                     Literal("S".into()),
-                    Literal("".into())
+                    Literal("".into()),
                 ]),
                 Literal("W".into()),
             ])
@@ -400,7 +298,7 @@ mod tests {
     }
 
     // #[test]
-    fn test_part1() -> Result<()> {
-        Ok(assert_eq!(part1("")?, 0))
-    }
+    // fn test_part1() -> Result<()> {
+    //     Ok(assert_eq!(part1("")?, 0))
+    // }
 }
