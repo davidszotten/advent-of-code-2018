@@ -90,7 +90,7 @@ enum Pattern {
     Literal(String),
     Concat(Vec<Pattern>),
     Or(Vec<Pattern>),
-    Partial(String),
+    // Partial(String),
 }
 
 impl Pattern {
@@ -123,7 +123,7 @@ impl Pattern {
                         // pos = ret.1;
                     }
                 }
-                Partial(_) => panic!("can't walk partial"),
+                // Partial(_) => panic!("can't walk partial"),
             }
             (seen, pos)
         }
@@ -138,29 +138,25 @@ impl FromStr for Pattern {
 
     fn from_str(s: &str) -> Result<Self> {
         use self::Pattern::*;
-        let mut chunks = vec![];
+        let mut chunk_positions = vec![];
         let mut chunk_start = 0;
-        let mut literal_chunks = vec![];
-        let mut literal_start = 0;
         let mut or_positions = vec![];
-        let mut bracket_chunks = vec![];
-        let mut bracket_start = 0;
         let mut pos = 0;
 
         let mut bracket = 0;
+
+        if &s[0..1] == "^" {
+            return s[1..s.len() - 1].parse();
+        }
 
         let mut chars = s.chars();
         while let Some(c) = chars.next() {
             match c {
                 '(' => {
                     if bracket == 0 {
-                        bracket_start = pos;
-                        if literal_start != pos {
-                            literal_chunks.push((literal_start, pos));
-                        }
                         if chunk_start != pos {
-                            chunks.push((chunk_start, pos));
-                            chunk_start = pos;
+                            chunk_positions.push((chunk_start, pos));
+                            chunk_start = pos + 1;
                         }
                     }
                     bracket += 1;
@@ -168,9 +164,7 @@ impl FromStr for Pattern {
                 ')' => {
                     bracket -= 1;
                     if bracket == 0 {
-                        chunks.push((chunk_start, pos + 1));
-                        bracket_chunks.push((bracket_start, pos + 1));
-                        literal_start = pos + 1;
+                        chunk_positions.push((chunk_start, pos));
                         chunk_start = pos + 1;
                     }
                 },
@@ -184,11 +178,8 @@ impl FromStr for Pattern {
             pos += 1;
         };
 
-        if literal_start != pos {
-            literal_chunks.push((literal_start, pos));
-        }
         if chunk_start != pos {
-            chunks.push((chunk_start, pos));
+            chunk_positions.push((chunk_start, pos));
         }
 
         println!("{}", s);
@@ -200,16 +191,8 @@ impl FromStr for Pattern {
         }
         println!("\t{:?}", &s[ostart..]);
 
-        // println!("literals: {:?}", literal_chunks);
-        // for (start, end) in literal_chunks {
-        //     println!("\t{:?}", &s[start..end]);
-        // }
-        // println!("brackets: {:?}", bracket_chunks);
-        // for &(start, end) in bracket_chunks.iter() {
-        //     println!("\t{:?}", &s[start..end]);
-        // }
-        println!("chunks: {:?}", chunks);
-        for &(start, end) in chunks.iter() {
+        println!("chunk_positions: {:?}", chunk_positions);
+        for &(start, end) in chunk_positions.iter() {
             println!("\t{:?}", &s[start..end]);
         }
 
@@ -221,15 +204,26 @@ impl FromStr for Pattern {
                 ors.push(s[ostart..opos].parse()?);
                 ostart = opos + 1;
             }
+            ors.push(s[ostart..].parse()?);
 
+            println!("returning or: {:?}", ors);
             return Ok(Or(ors));
         }
 
-        for (start, end) in bracket_chunks {
-            &s[start+1..end-1].parse::<Pattern>();
+        if chunk_positions.len() == 1 {
+            println!("returning literal: {}", s);
+            return Ok(Literal(s.into()));
         }
 
-        Ok(Literal("A".into()))
+        let mut chunks: Vec<Pattern> = vec![];
+        // Ok(Concat( chunk_positions.iter().map(|&(start, end)| s[start..end].parse::<Pattern>()?).collect()))
+        for &(start, end) in chunk_positions.iter() {
+        // for &opos in or_positions.iter() {
+            chunks.push(s[start..end].parse()?);
+            // ostart = opos + 1;
+        }
+        println!("returning concat: {:?}", chunks);
+        Ok(Concat(chunks))
     }
 
     // fn from_str(s: &str) -> Result<Self> {
@@ -342,7 +336,7 @@ mod tests {
         use self::Pattern::*;
         Ok(assert_eq!(
             "^SNEW$".parse::<Pattern>()?,
-            Concat(vec![Literal("SNEW".into())])
+            Literal("SNEW".into())
         ))
     }
     #[test]
@@ -365,7 +359,7 @@ mod tests {
             "^E(N|S|W)$".parse::<Pattern>()?,
             Concat(vec![
                 Literal("E".into()),
-                Or(vec![Literal("E".into()), Literal("N".into()), Literal("W".into())]),
+                Or(vec![Literal("N".into()), Literal("S".into()), Literal("W".into())]),
             ])
         ))
     }
