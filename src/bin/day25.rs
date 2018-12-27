@@ -15,7 +15,10 @@ struct Point {
 
 impl Point {
     fn distance(&self, other: &Point) -> i32 {
-        (other.x - self.x).abs() + (other.y - self.y).abs() + (other.z - self.z).abs() + (other.w - self.w).abs()
+        (other.x - self.x).abs()
+            + (other.y - self.y).abs()
+            + (other.z - self.z).abs()
+            + (other.w - self.w).abs()
     }
 }
 
@@ -23,8 +26,13 @@ fn part1(input: &str) -> Result<usize> {
     let points: Vec<_> = input
         .split('\n')
         .map(|r| r.split(',').filter_map(|s| s.parse::<i32>().ok()))
-        .map(|mut ns| Point{x: ns.next().expect("x"), y: ns.next().expect("y"), z: ns.next().expect("z"), w: ns.next().expect("w")}).collect()
-    ;
+        .map(|mut ns| Point {
+            x: ns.next().expect("x"),
+            y: ns.next().expect("y"),
+            z: ns.next().expect("z"),
+            w: ns.next().expect("w"),
+        })
+        .collect();
 
     // let constellations: Vec<Vec<usize>> = vec![];
     let mut constellations: HashMap<usize, Vec<usize>> = HashMap::new();
@@ -76,7 +84,9 @@ mod tests {
 
     #[test]
     fn test_part1b() -> Result<()> {
-        Ok(assert_eq!(part1("-1,2,2,0
+        Ok(assert_eq!(
+            part1(
+                "-1,2,2,0
 0,0,2,-2
 0,0,0,-2
 -1,2,0,0
@@ -85,12 +95,17 @@ mod tests {
 -1,3,2,2
 -1,0,-1,0
 0,2,1,-2
-3,0,0,0")?, 4))
+3,0,0,0"
+            )?,
+            4
+        ))
     }
 
     #[test]
     fn test_part1c() -> Result<()> {
-        Ok(assert_eq!(part1("1,-1,0,1
+        Ok(assert_eq!(
+            part1(
+                "1,-1,0,1
 2,0,-1,0
 3,2,-1,0
 0,0,3,1
@@ -99,12 +114,17 @@ mod tests {
 -2,2,0,0
 2,-2,0,-1
 1,-1,0,-1
-3,2,0,2")?, 3))
+3,2,0,2"
+            )?,
+            3
+        ))
     }
 
     #[test]
     fn test_part1d() -> Result<()> {
-        Ok(assert_eq!(part1("1,-1,-1,-2
+        Ok(assert_eq!(
+            part1(
+                "1,-1,-1,-2
 -2,-2,0,1
 0,2,1,3
 -2,3,-2,1
@@ -113,7 +133,10 @@ mod tests {
 0,-2,-1,0
 -2,2,3,-1
 1,2,2,0
--1,-2,0,-2")?, 8))
+-1,-2,0,-2"
+            )?,
+            8
+        ))
     }
 
 }
