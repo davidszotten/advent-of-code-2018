@@ -1,7 +1,6 @@
 use aoc2018::{dispatch, Result};
 use failure::Error;
-// use std::cmp::{max, min};
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashMap, VecDeque};
 use std::fmt;
 use std::ops;
 use std::str::FromStr;
@@ -193,28 +192,7 @@ impl FromStr for Pattern {
 
 fn part1(input: &str) -> Result<usize> {
     let pattern: Pattern = input.parse()?;
-    // println!("{:?}", pattern);
     let edges = pattern.edges();
-    let mut remaining = HashSet::new();
-    // let mut min_x = 0;
-    // let mut max_x = 0;
-    // let mut min_y = 0;
-    // let mut max_y = 0;
-    for (source, destinations) in edges.iter() {
-        remaining.insert(source);
-        // min_x = min(min_x, source.x);
-        // max_x = max(max_x, source.x);
-        // min_y = min(min_y, source.y);
-        // max_y = max(max_y, source.y);
-        for destination in destinations {
-            remaining.insert(destination);
-            // min_x = min(min_x, destination.x);
-            // max_x = max(max_x, destination.x);
-            // min_y = min(min_y, destination.y);
-            // max_y = max(max_y, destination.y);
-        }
-    }
-    // println!("all: {:?}", remaining);
 
     let mut queue = VecDeque::new();
     let start = Coor { x: 0, y: 0 };
@@ -229,8 +207,6 @@ fn part1(input: &str) -> Result<usize> {
             .clone();
         if let Some(neighbours) = edges.get(&current) {
             for &next in neighbours {
-                // distances.entry(next).or_insert(current_distance + 1);
-                // queue.push_back(next);
                 distances.entry(next).or_insert_with(|| {
                     if queue.push_back(next) == () {
                         current_distance + 1
@@ -241,33 +217,6 @@ fn part1(input: &str) -> Result<usize> {
             }
         }
     }
-    // println!("\ndistances: {:?}", distances);
-
-    // println!("{:?}", (min_x, min_y, max_x, max_y));
-    // let min_x = seen.iter().map(|(Coor { x, y: _ }, _)| *x).min().unwrap();
-    // let max_x = seen.iter().map(|(Coor { x, y: _ }, _)| *x).max().unwrap();
-    // let min_y = seen.iter().map(|(Coor { x: _, y }, _)| *y).min().unwrap();
-    // let max_y = seen.iter().map(|(Coor { x: _, y }, _)| *y).max().unwrap();
-    // println!("{}/{}, {}/{}", min_x, max_x, min_y, max_y);
-    // for y in min_y..=max_y {
-    //     for x in min_x..=max_x {
-    //         let north = seen.contains(&(Coor { x, y }, 'N'));
-    //         let south = seen.contains(&(Coor { x, y }, 'S'));
-    //         let east = seen.contains(&(Coor { x, y }, 'E'));
-    //         let west = seen.contains(&(Coor { x, y }, 'W'));
-    //         let found = north || south || east || west;
-    //         let hmarker = |b| if b { "|" } else { "?" };
-    //         let cmarker = if (x, y) == (0, 0) {
-    //             "X"
-    //         } else if found {
-    //             "."
-    //         } else {
-    //             " "
-    //         };
-    //         print!("{}{}{}", hmarker(west), cmarker, hmarker(east));
-    //     }
-    //     println!("");
-    // }
     Ok(*distances.values().max().unwrap())
 }
 
