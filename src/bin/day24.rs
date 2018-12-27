@@ -112,7 +112,12 @@ impl Reindeer {
     }
 
     fn remaining(&self) -> UnitType {
-        self.units.values().filter(|u| u.units > 0).next().unwrap().unit_type
+        self.units
+            .values()
+            .filter(|u| u.units > 0)
+            .next()
+            .unwrap()
+            .unit_type
     }
 }
 
@@ -282,12 +287,11 @@ fn part2(input: &str) -> Result<u32> {
         let mut reindeer = Reindeer::new(input, boost);
         let res = reindeer.fight();
         if reindeer.remaining() == UnitType::ImmuneSystem {
-            break res
+            break res;
         }
         boost += 1;
     })
 }
-
 
 #[cfg(test)]
 mod tests {
