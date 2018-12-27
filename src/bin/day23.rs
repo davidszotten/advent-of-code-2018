@@ -69,6 +69,7 @@ fn part1(input: &str) -> Result<usize> {
     Ok(count)
 }
 
+
 fn part2(input: &str) -> Result<i32> {
     let bots = InputWalker::new(input).collect::<Vec<_>>();
     let max_x = bots.iter().max_by_key(|b| b.x).unwrap().x;
@@ -92,22 +93,23 @@ fn part2(input: &str) -> Result<i32> {
     let mut best_dist = None;
     // let mut best_pos = (0, 0, 0);
     for x in min_x..=max_x {
-        println!("{}", x);
+        println!("x: {}", x);
         for y in min_y..=max_y {
-            println!("{}", y);
+            println!("y: {}", y);
             for z in min_z..=max_z {
                 if z % 1_000_000 == 0 {
-                    println!("{}", z);
+                    // return Ok(-1);
+                    println!("z: {}", z);
                 }
                 // let tmp = Bot { x, y, z, r: 0 };
                 // let zero_dist = tmp.distance(&zero);
-                let zero_dist = x.abs() + y.abs() + z.abs();
                 let count = bots
                     .iter()
                     .filter(|&b| b.p_distance(x, y, z) <= b.r)
                     .count();
                 // if count >= bot_count {
                 if count >= bot_count {
+                    let zero_dist = x.abs() + y.abs() + z.abs();
                     // println!("bar: {} {}", count, bot_count);
                     // println!("bar: {}   {} {} {} ", count, x, y, z);
                     let mut best = false;
