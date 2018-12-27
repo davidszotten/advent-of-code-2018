@@ -1,48 +1,13 @@
 use aoc2018::{dispatch, Result};
-use failure::{Error};
-use std::collections::HashSet;
+use failure::Error;
+// use std::cmp::{max, min};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::fmt;
 use std::ops;
 use std::str::FromStr;
 
 fn main() {
     dispatch(&part1, &part2)
-}
-
-fn part1(input: &str) -> Result<usize> {
-    let pattern: Pattern = input.parse()?;
-    println!("{:?}", pattern);
-    let seen = pattern.walk();
-    println!("{:?}", seen);
-    let min_x = seen.iter().map(|(Coor { x, y: _ }, _)| *x).min().unwrap();
-    let max_x = seen.iter().map(|(Coor { x, y: _ }, _)| *x).max().unwrap();
-    let min_y = seen.iter().map(|(Coor { x: _, y }, _)| *y).min().unwrap();
-    let max_y = seen.iter().map(|(Coor { x: _, y }, _)| *y).max().unwrap();
-    println!("{}/{}, {}/{}", min_x, max_x, min_y, max_y);
-    for y in min_y..=max_y {
-        for x in min_x..=max_x {
-            let north = seen.contains(&(Coor { x, y }, 'N'));
-            let south = seen.contains(&(Coor { x, y }, 'S'));
-            let east = seen.contains(&(Coor { x, y }, 'E'));
-            let west = seen.contains(&(Coor { x, y }, 'W'));
-            let found = north || south || east || west;
-            let hmarker = |b| if b { "|" } else { "?" };
-            let cmarker = if (x, y) == (0, 0) {
-                "X"
-            } else if found {
-                "."
-            } else {
-                " "
-            };
-            print!("{}{}{}", hmarker(west), cmarker, hmarker(east));
-        }
-        println!("");
-    }
-    Ok(seen.len())
-}
-
-fn part2(_input: &str) -> Result<i32> {
-    Ok(0)
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
@@ -76,9 +41,9 @@ impl Coor {
         let (x, y) = match c {
             'N' => (0, 1),
             'S' => (0, -1),
-            'E' => (-1, 0),
-            'W' => (1, 0),
-            _ => panic!("bad from_char"),
+            'E' => (1, 0),
+            'W' => (-1, 0),
+            c => panic!(format!("bad from_char: {}", c)),
         };
         Coor { x, y }
     }
@@ -91,41 +56,44 @@ enum Pattern {
     Or(Vec<Pattern>),
 }
 
+type Edges = HashMap<Coor, Vec<Coor>>;
+
 impl Pattern {
-    fn walk(&self) -> HashSet<(Coor, char)> {
-        fn inner_walk(
-            pattern: &Pattern,
-            mut seen: HashSet<(Coor, char)>,
-            mut pos: Coor,
-        ) -> (HashSet<(Coor, char)>, Coor) {
+    fn edges(&self) -> Edges {
+        fn inner(pattern: &Pattern, mut edges: Edges, mut pos: Coor) -> (Edges, Coor) {
             use self::Pattern::*;
             match pattern {
                 Literal(s) => {
                     for c in s.chars() {
                         let direction = Coor::from_char(c);
-                        seen.insert((pos, c));
-                        pos = pos + direction;
+                        let next = pos + direction;
+                        // println!("{:?}", (pos, next));
+                        let entry = edges.entry(pos).or_insert(vec![]);
+                        (*entry).push(next);
+                        pos = next;
                     }
                 }
                 Concat(v) => {
                     for p in v {
-                        let ret = inner_walk(p, seen, pos);
-                        seen = ret.0;
+                        let ret = inner(p, edges, pos);
+                        edges = ret.0;
                         pos = ret.1;
                     }
                 }
                 Or(v) => {
                     for p in v {
-                        let ret = inner_walk(p, seen, pos);
-                        seen = ret.0;
+                        let ret = inner(p, edges, pos);
+                        edges = ret.0;
                     }
                 }
             }
-            (seen, pos)
+            (edges, pos)
         }
-        let seen = HashSet::new();
+        let edges = HashMap::new();
         let pos = Coor::new();
-        inner_walk(self, seen, pos).0
+        let edges = inner(self, edges, pos).0;
+        // println!("{:?}", edges);
+        edges
     }
 }
 
@@ -145,7 +113,7 @@ impl FromStr for Pattern {
             return Ok(Literal("".into()));
         }
 
-        if &s[0..1] == "^" {
+        if &s[0..1] == "^" || &s[0..1] == "(" {
             return s[1..s.len() - 1].parse();
         }
 
@@ -160,23 +128,23 @@ impl FromStr for Pattern {
                         }
                     }
                     bracket += 1;
-                },
+                }
                 ')' => {
                     bracket -= 1;
                     if bracket == 0 {
                         chunk_positions.push((chunk_start, pos));
                         chunk_start = pos + 1;
                     }
-                },
+                }
                 '|' => {
                     if bracket == 0 {
                         or_positions.push(pos);
                     }
-                },
-                _ => {},
+                }
+                _ => {}
             }
             pos += 1;
-        };
+        }
 
         if chunk_start != pos {
             chunk_positions.push((chunk_start, pos));
@@ -211,7 +179,6 @@ impl FromStr for Pattern {
         }
 
         if chunk_positions.len() == 1 {
-            // println!("returning literal: {}", s);
             return Ok(Literal(s.into()));
         }
 
@@ -222,13 +189,104 @@ impl FromStr for Pattern {
         // println!("returning concat: {:?}", chunks);
         Ok(Concat(chunks))
     }
+}
 
+fn part1(input: &str) -> Result<usize> {
+    let pattern: Pattern = input.parse()?;
+    // println!("{:?}", pattern);
+    let edges = pattern.edges();
+    let mut remaining = HashSet::new();
+    // let mut min_x = 0;
+    // let mut max_x = 0;
+    // let mut min_y = 0;
+    // let mut max_y = 0;
+    for (source, destinations) in edges.iter() {
+        remaining.insert(source);
+        // min_x = min(min_x, source.x);
+        // max_x = max(max_x, source.x);
+        // min_y = min(min_y, source.y);
+        // max_y = max(max_y, source.y);
+        for destination in destinations {
+            remaining.insert(destination);
+            // min_x = min(min_x, destination.x);
+            // max_x = max(max_x, destination.x);
+            // min_y = min(min_y, destination.y);
+            // max_y = max(max_y, destination.y);
+        }
+    }
+    // println!("all: {:?}", remaining);
+
+    let mut queue = VecDeque::new();
+    let start = Coor { x: 0, y: 0 };
+    queue.push_back(start);
+    let mut distances = HashMap::new();
+    distances.insert(start, 0);
+    while !queue.is_empty() {
+        let current = queue.pop_front().unwrap();
+        let current_distance = distances
+            .get(&current)
+            .expect("current missing in distances")
+            .clone();
+        if let Some(neighbours) = edges.get(&current) {
+            for &next in neighbours {
+                // distances.entry(next).or_insert(current_distance + 1);
+                // queue.push_back(next);
+                distances.entry(next).or_insert_with(|| {
+                    if queue.push_back(next) == () {
+                        current_distance + 1
+                    } else {
+                        panic!("haxx")
+                    }
+                });
+            }
+        }
+    }
+    // println!("\ndistances: {:?}", distances);
+
+    // println!("{:?}", (min_x, min_y, max_x, max_y));
+    // let min_x = seen.iter().map(|(Coor { x, y: _ }, _)| *x).min().unwrap();
+    // let max_x = seen.iter().map(|(Coor { x, y: _ }, _)| *x).max().unwrap();
+    // let min_y = seen.iter().map(|(Coor { x: _, y }, _)| *y).min().unwrap();
+    // let max_y = seen.iter().map(|(Coor { x: _, y }, _)| *y).max().unwrap();
+    // println!("{}/{}, {}/{}", min_x, max_x, min_y, max_y);
+    // for y in min_y..=max_y {
+    //     for x in min_x..=max_x {
+    //         let north = seen.contains(&(Coor { x, y }, 'N'));
+    //         let south = seen.contains(&(Coor { x, y }, 'S'));
+    //         let east = seen.contains(&(Coor { x, y }, 'E'));
+    //         let west = seen.contains(&(Coor { x, y }, 'W'));
+    //         let found = north || south || east || west;
+    //         let hmarker = |b| if b { "|" } else { "?" };
+    //         let cmarker = if (x, y) == (0, 0) {
+    //             "X"
+    //         } else if found {
+    //             "."
+    //         } else {
+    //             " "
+    //         };
+    //         print!("{}{}{}", hmarker(west), cmarker, hmarker(east));
+    //     }
+    //     println!("");
+    // }
+    Ok(*distances.values().max().unwrap())
+}
+
+fn part2(_input: &str) -> Result<i32> {
+    Ok(0)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    #[test]
+    fn test_parse1_brackets() -> Result<()> {
+        use self::Pattern::*;
+        Ok(assert_eq!(
+            "^((SNEW))$".parse::<Pattern>()?,
+            Literal("SNEW".into())
+        ))
+    }
     #[test]
     fn test_parse1() -> Result<()> {
         use self::Pattern::*;
@@ -257,7 +315,11 @@ mod tests {
             "^E(N|S|W)$".parse::<Pattern>()?,
             Concat(vec![
                 Literal("E".into()),
-                Or(vec![Literal("N".into()), Literal("S".into()), Literal("W".into())]),
+                Or(vec![
+                    Literal("N".into()),
+                    Literal("S".into()),
+                    Literal("W".into())
+                ]),
             ])
         ))
     }
@@ -297,8 +359,18 @@ mod tests {
         ))
     }
 
-    // #[test]
-    // fn test_part1() -> Result<()> {
-    //     Ok(assert_eq!(part1("")?, 0))
-    // }
+    #[test]
+    fn test_part1() -> Result<()> {
+        assert_eq!(part1("^ENWWW(NEEE|SSE(EE|N))$")?, 10);
+        assert_eq!(part1("^ENNWSWW(NEWS|)SSSEEN(WNSE|)EE(SWEN|)NNN$")?, 18);
+        assert_eq!(
+            part1("^ESSWWN(E|NNENN(EESS(WNSE|)SSS|WWWSSSSE(SW|NNNE)))")?,
+            23
+        );
+        assert_eq!(
+            part1("^WSSEESWWWNW(S|NENNEEEENN(ESSSSW(NWSW|SSEN)|WSWWN(E|WWS(E|SS))))$")?,
+            31
+        );
+        Ok(())
+    }
 }
