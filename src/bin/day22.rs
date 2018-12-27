@@ -2,11 +2,12 @@ use aoc2018::{dispatch, Result};
 use cached::cached;
 use std::cmp::{Ord, Ordering};
 use std::collections::{BinaryHeap, HashSet};
-// use std::collections::VecDeque;
 
 fn main() {
     dispatch(&part1, &part2)
 }
+
+type Target = (u32, u32);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 enum Type {
@@ -63,10 +64,6 @@ impl Type {
         let er = erosion(depth, gi);
         Type::from_erosion(er)
     }
-
-    // fn sufficient_gear(&self) -> bool {
-
-    // }
 }
 
 fn erosion(depth: u32, geo_index: u32) -> u32 {
@@ -117,6 +114,7 @@ struct State {
     y: u32,
     gear: Gear,
     time: u32,
+    target: (u32, u32),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -139,14 +137,18 @@ impl Offset {
 
 impl Ord for State {
     fn cmp(&self, other: &State) -> Ordering {
-        // self.height.cmp(&other.height)
         // nb reverse order
         use self::Gear::Torch;
         let gear_order = |t| match t {
             Torch => 0,
             _ => 1,
         };
-        (other.time, gear_order(other.gear)).cmp(&(self.time, gear_order(self.gear)))
+        (
+            other.time,
+            gear_order(other.gear),
+            other.distance_to_target(),
+        )
+            .cmp(&(self.time, gear_order(self.gear), self.distance_to_target()))
     }
 }
 
@@ -156,59 +158,98 @@ impl PartialOrd for State {
     }
 }
 
-// struct NeighbourIterator {
+struct NeighbourIterator<'a> {
+    input: &'a Input,
+    seen: &'a HashSet<(u32, u32, Gear)>,
+    state: &'a State,
+    idx: usize,
+}
 
-// }
+impl<'a> NeighbourIterator<'a> {
+    fn new(input: &'a Input, seen: &'a HashSet<(u32, u32, Gear)>, state: &'a State) -> Self {
+        NeighbourIterator {
+            input,
+            seen,
+            state,
+            idx: 0,
+        }
+    }
+}
+
+impl<'a> Iterator for NeighbourIterator<'a> {
+    type Item = State;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        use self::Offset::*;
+        let x = self.state.x;
+        let y = self.state.y;
+        let time = self.state.time;
+        let input = *self.input;
+        let type_ = self.state.type_(input);
+
+        loop {
+            let (offset_x, offset_y) = match self.idx {
+                0 => (Decr, Noop),
+                1 => (Incr, Noop),
+                2 => (Noop, Decr),
+                3 => (Noop, Incr),
+                _ => break None,
+            };
+            self.idx += 1;
+
+            if (x == 0 && offset_x == Decr) || (y == 0 && offset_y == Decr) {
+                continue;
+            }
+
+            let next_x = offset_x.apply(x);
+            let next_y = offset_y.apply(y);
+            let next_type = Type::get(input.depth, input.target, next_x, next_y);
+            let gear = if type_ == next_type {
+                self.state.gear
+            } else {
+                Gear::overlap(type_, next_type)
+            };
+            let delay = if gear == self.state.gear { 0 } else { 7 };
+
+            if self.seen.contains(&(next_x, next_y, gear)) {
+                continue;
+            }
+
+            break Some(State::new(
+                next_x,
+                next_y,
+                gear,
+                self.state.target,
+                time + 1 + delay,
+            ));
+        }
+    }
+}
 
 impl State {
-    fn new(x: u32, y: u32, gear: Gear, time: u32) -> Self {
-        State { x, y, gear, time }
+    fn new(x: u32, y: u32, gear: Gear, target: Target, time: u32) -> Self {
+        State {
+            x,
+            y,
+            gear,
+            target,
+            time,
+        }
     }
     fn type_(&self, input: Input) -> Type {
         Type::get(input.depth, input.target, self.x, self.y)
     }
-    fn neighbours(&self, input: Input, seen: &HashSet<(u32, u32, Gear)>) -> Vec<State> {
-        use self::Offset::*;
-        let mut res = vec![];
-        let x = self.x;
-        let y = self.y;
-        let time = self.time;
-        let type_ = self.type_(input);
+    fn neighbours<'a>(
+        &'a self,
+        input: &'a Input,
+        seen: &'a HashSet<(u32, u32, Gear)>,
+    ) -> NeighbourIterator<'a> {
+        NeighbourIterator::new(&input, &seen, &self)
+    }
 
-        if (self.x, self.y) == input.target && self.gear != Gear::Torch {
-            return vec![State::new(x, y, Gear::Torch, time + 7)];
-        }
-
-        for (offset_x, offset_y) in [(Decr, Noop), (Incr, Noop), (Noop, Decr), (Noop, Incr)].iter()
-        {
-            if (x == 0 && *offset_x == Decr) || (y == 0 && *offset_y == Decr) {
-                continue;
-            }
-
-            // println!("{:?}", (offset_x, offset_y));
-
-            let next_x = offset_x.apply(x);
-            let next_y = offset_y.apply(y);
-            // println!("{} {}   {} {}", x, y, next_x, next_y);
-            let next_type = Type::get(input.depth, input.target, next_x, next_y);
-            let gear = if type_ == next_type {
-                self.gear
-            } else {
-                Gear::overlap(type_, next_type)
-            };
-            let delay = if gear == self.gear { 0 } else { 7 };
-
-            // println!("gear: {:?} -> {:?}", self.gear, gear);
-            // println!("seen: {:?}", seen);
-            // println!("e: {:?}", (next_x, next_y, gear));
-            if seen.contains(&(next_x, next_y, gear)) {
-                continue;
-            }
-
-            // println!("push: {:?}", (next_x, next_y, gear, time + 1 + delay));
-            res.push(State::new(next_x, next_y, gear, time + 1 + delay));
-        }
-        res
+    fn distance_to_target(&self) -> u32 {
+        ((self.x as i32 - self.target.0 as i32).abs()
+            + (self.y as i32 - self.target.1 as i32).abs()) as u32
     }
 }
 
@@ -219,33 +260,37 @@ fn part1(_input: &str) -> Result<u32> {
 }
 
 fn calculate2(input: Input) -> u32 {
-    // let mut queue = VecDeque::new();
     let mut queue = BinaryHeap::new();
     let mut seen = HashSet::new();
     let start = State {
         x: 0,
         y: 0,
         gear: Gear::Torch,
+        target: input.target,
         time: 0,
     };
-    // queue.push_back(start);
     queue.push(start);
     loop {
-        // let pos = queue.pop_front().expect("Out of moves");
         let pos = queue.pop().expect("Out of moves");
-        // if seen.contains(&(pos.x, pos.y, pos.gear)) {
-        //     println!("skip");
-        //     continue;
-        // }
+        if seen.contains(&(pos.x, pos.y, pos.gear)) {
+            continue;
+        }
         seen.insert((pos.x, pos.y, pos.gear));
-        // println!("");
-        // println!("seen seen: {:?}", seen);
         // println!("{:?}", pos);
         if (pos.x, pos.y) == input.target && pos.gear == Gear::Torch {
             break pos.time;
         }
-        for next in pos.neighbours(input, &seen) {
-            // queue.push_back(next);
+        if (pos.x, pos.y) == input.target && pos.gear != Gear::Torch {
+            queue.push(State::new(
+                pos.x,
+                pos.y,
+                Gear::Torch,
+                pos.target,
+                pos.time + 7,
+            ));
+        }
+
+        for next in pos.neighbours(&input, &seen) {
             queue.push(next);
         }
     }
@@ -275,18 +320,21 @@ mod tests {
             x: 0,
             y: 0,
             gear: Gear::Torch,
+            target: (0, 0),
             time: 0,
         };
         let s2 = State {
             x: 0,
             y: 0,
             gear: Gear::ClimbingGear,
+            target: (0, 0),
             time: 0,
         };
         let s3 = State {
             x: 0,
             y: 0,
             gear: Gear::Neither,
+            target: (0, 0),
             time: 2,
         };
         queue.push(s3);
@@ -298,6 +346,31 @@ mod tests {
     }
 
     #[test]
+    fn test_ord2() {
+        let mut queue = BinaryHeap::new();
+        let s1 = State {
+            x: 0,
+            y: 0,
+            gear: Gear::Torch,
+            target: (1, 1),
+            time: 0,
+        };
+        let s2 = State {
+            x: 0,
+            y: 1,
+            gear: Gear::Torch,
+            target: (1, 1),
+            time: 0,
+        };
+        queue.push(s1);
+        queue.push(s2);
+        queue.push(s1);
+        assert_eq!(queue.pop().unwrap(), s2);
+        assert_eq!(queue.pop().unwrap(), s1);
+        assert_eq!(queue.pop().unwrap(), s1);
+    }
+
+    #[test]
     fn test_calculate2() {
         let input = Input {
             depth: 510,
@@ -305,9 +378,4 @@ mod tests {
         };
         assert_eq!(calculate2(input), 45);
     }
-
-    // #[test]
-    // fn test_part1() -> Result<()> {
-    //     Ok(assert_eq!(part1("")?, 0))
-    // }
 }
