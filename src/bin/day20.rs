@@ -190,8 +190,7 @@ impl FromStr for Pattern {
     }
 }
 
-fn part1(input: &str) -> Result<usize> {
-    let pattern: Pattern = input.parse()?;
+fn get_distances(pattern: &Pattern) -> HashMap<Coor, usize> {
     let edges = pattern.edges();
 
     let mut queue = VecDeque::new();
@@ -217,12 +216,25 @@ fn part1(input: &str) -> Result<usize> {
             }
         }
     }
+    distances
+}
+
+fn part1(input: &str) -> Result<usize> {
+    let pattern: Pattern = input.parse()?;
+    let distances = get_distances(&pattern);
     Ok(*distances.values().max().unwrap())
 }
 
-fn part2(_input: &str) -> Result<i32> {
-    Ok(0)
+fn part2(input: &str) -> Result<usize> {
+    let pattern: Pattern = input.parse()?;
+    let distances = get_distances(&pattern);
+    println!("{}", (distances.values().filter(|&&d| d >= 1000).count()));
+    println!("{}", (distances.values().filter(|&&d| d < 1000).count()));
+    println!("{}", (distances.values().count()));
+    Ok(distances.values().filter(|&&d| d >= 1000).count())
 }
+
+// 8612 too low
 
 #[cfg(test)]
 mod tests {
