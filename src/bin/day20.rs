@@ -66,7 +66,6 @@ impl Pattern {
                     for c in s.chars() {
                         let direction = Coor::from_char(c);
                         let next = pos + direction;
-                        // println!("{:?}", (pos, next));
                         let entry = edges.entry(pos).or_insert(vec![]);
                         (*entry).push(next);
                         pos = next;
@@ -91,7 +90,6 @@ impl Pattern {
         let edges = HashMap::new();
         let pos = Coor::new();
         let edges = inner(self, edges, pos).0;
-        // println!("{:?}", edges);
         edges
     }
 }
@@ -108,11 +106,13 @@ impl FromStr for Pattern {
 
         let mut bracket = 0;
 
+        // println!("{}", s);
+
         if s.is_empty() {
             return Ok(Literal("".into()));
         }
 
-        if &s[0..1] == "^" || &s[0..1] == "(" {
+        if &s[0..1] == "^" {
             return s[1..s.len() - 1].parse();
         }
 
@@ -123,8 +123,8 @@ impl FromStr for Pattern {
                     if bracket == 0 {
                         if chunk_start != pos {
                             chunk_positions.push((chunk_start, pos));
-                            chunk_start = pos + 1;
                         }
+                        chunk_start = pos + 1;
                     }
                     bracket += 1;
                 }
@@ -149,7 +149,6 @@ impl FromStr for Pattern {
             chunk_positions.push((chunk_start, pos));
         }
 
-        // println!("{}", s);
         // println!("or: {:?}", or_positions);
         // let mut ostart = 0;
         // for &opos in or_positions.iter() {
@@ -178,6 +177,7 @@ impl FromStr for Pattern {
         }
 
         if chunk_positions.len() == 1 {
+            assert!(!s.contains('('));
             return Ok(Literal(s.into()));
         }
 
@@ -228,26 +228,22 @@ fn part1(input: &str) -> Result<usize> {
 fn part2(input: &str) -> Result<usize> {
     let pattern: Pattern = input.parse()?;
     let distances = get_distances(&pattern);
-    println!("{}", (distances.values().filter(|&&d| d >= 1000).count()));
-    println!("{}", (distances.values().filter(|&&d| d < 1000).count()));
-    println!("{}", (distances.values().count()));
     Ok(distances.values().filter(|&&d| d >= 1000).count())
 }
-
-// 8612 too low
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn test_parse1_brackets() -> Result<()> {
+    fn test_parse_brackets1() -> Result<()> {
         use self::Pattern::*;
         Ok(assert_eq!(
-            "^((SNEW))$".parse::<Pattern>()?,
-            Literal("SNEW".into())
+            "^(SN)E$".parse::<Pattern>()?,
+            Concat(vec![Literal("SN".into()), Literal("E".into())])
         ))
     }
+
     #[test]
     fn test_parse1() -> Result<()> {
         use self::Pattern::*;
