@@ -267,37 +267,24 @@ impl Cpu {
 }
 
 fn part1(input: &str) -> Result<i32> {
-    let mut cpu = Cpu::from_input(input, [13522479, 0, 0, 0, 0, 0]);
+    let mut cpu = Cpu::from_input(input, [29395, 0, 0, 0, 0, 0]);
+    // let mut cpu = Cpu::from_input(input, [13522479, 0, 0, 0, 0, 0]);
     cpu.run();
     Ok(cpu.get(0))
 }
 
-fn fast(r0: i32, mut max_loops: i32) -> Option<()> {
+fn fast(r0: i32, mut max_loops: i32) -> Option<i32> {
     let mut r1 = 0;
     let mut r2;
-    let mut r3;
-    let mut r5;
+    let mut r3 = 0;
+    let mut r5 = 0;
     // #ip 4
-    // 00: seti 123 0 2 : r2 = 123
-    r2 = 123;
-    // 01: bani 2 456 2 : r2 = r2 & 456
-    loop {
-        max_loops -= 1;
-        if max_loops < 0 { return None }
-        // println!("loop1");
-        r2 = r2 & 456;
-    // 02: eqri 2 72 2 : r2 = (r2 == 72)
-        if r2 == 72 {
-    // 03: addr 2 4 4 : r4 = r2 + r4 : jmp rel r2
-            // not read:  r2 = 1;
-            break;
-        }
-    // 04: seti 0 0 4 : jmp 1
-    }
+    // 00 - 04: self test
+
     // 05: seti 0 0 2 : r2 = 0
     r2 = 0;
     // 06: bori 2 65536 5 : r5 = r2 | (2^16)
-    loop {
+    while r2 != r0 {
         max_loops -= 1;
         if max_loops < 0 { return None }
         // println!("loop2");
@@ -331,31 +318,36 @@ fn fast(r0: i32, mut max_loops: i32) -> Option<()> {
                 // 17: seti 0 0 3 : r3 = 0
                 r3 = 0;
                 // 18: addi 3 1 1 : r1 = r3 + 1
-                loop {
-                max_loops -= 1;
-                if max_loops < 0 { return None }
-                // println!("18: {} {} {} {} {} {}", r0, r1, r2, r3, "_", r5);
-                    // println!("loop3: r1: {}, r3: {}, r5: {}", r1, r3, r5);
-                    r1 = r3 + 1;
-                    // 19: muli 1 256 1 : r1 = r1 * 256
-                        r1 = r1 * 256;
-                    // 20: gtrr 1 5 1 : r1 = (r1 > r5)
-                        if r1 > r5 {
-                            r1 = 1;
-                            break;
-                        }
-                        // not read r1 = 0;
 
-                    // 21: addr 1 4 4 : r4 = r4 + r1
+                r3 = r5 / 256;
+                r1 = 1;
 
-                    // 22: addi 4 1 4 : jmp 24
+                // loop {
+                // max_loops -= 1;
+                // if max_loops < 0 { return None }
+                // // println!("18: {} {} {} {} {} {}", r0, r1, r2, r3, "_", r5);
+                //     // println!("loop3: r1: {}, r3: {}, r5: {}", r1, r3, r5);
+                //     r1 = r3 + 1;
+                //     // 19: muli 1 256 1 : r1 = r1 * 256
+                //     r1 = r1 * 256;
+                //     // 20: gtrr 1 5 1 : r1 = (r1 > r5)
+                //     if r1 > r5 {
+                //         r1 = 1;
+                //         break;
+                //     }
+                //     // not read r1 = 0;
 
-                    // 23: seti 25 6 4 : jmp 26
+                //     // 21: addr 1 4 4 : r4 = r4 + r1
 
-                    // 24: addi 3 1 3 : r3 = r3 + 1
-                        r3 += 1;
-                    // 25: seti 17 7 4 : jmp 18
-                    }
+                //     // 22: addi 4 1 4 : jmp 24
+
+                //     // 23: seti 25 6 4 : jmp 26
+
+                //     // 24: addi 3 1 3 : r3 = r3 + 1
+                //         r3 += 1;
+                //     // 25: seti 17 7 4 : jmp 18
+                //     }
+
                 // 26: setr 3 4 5 : r5 = r3
                 // println!("26: {} {} {} {} {} {}", r0, r1, r2, r3, "_", r5);
                 r5 = r3;
@@ -367,33 +359,44 @@ fn fast(r0: i32, mut max_loops: i32) -> Option<()> {
         }
         // 28: eqrr 2 0 3 : r3 = (r2 == r0) : if r2 == r0 then end
         // println!("28: {} {} {} {} {} {}", r0, r1, r2, r3, "_", r5);
-        if r2 == r0 {
-            break;
-        } else {
-            // not read: r3 = 0;
-        }
+        // if r2 == r0 {
+        //     break;
+        // } else {
+        //     // not read: r3 = 0;
+        // }
         // 29: addr 3 4 4 : r4 = r4 + r3
 
         // 30: seti 5 6 4 : jmp 6
     }
-    println!("loops remaining: {}", max_loops);
-    println!("done: {} {} {} {} {} {}", r0, r1, r2, r3, "_", r5);
-    Some(())
+    // println!("loops remaining: {}", max_loops);
+    // println!("done: {} {} {} {} {} {}", r0, r1, r2, r3, "_", r5);
+    // println!("r0: {}, loops remaining: {}", r0, max_loops);
+    Some(max_loops)
 }
 
 fn part2(_input: &str) -> Result<i32> {
     // let mut cpu = Cpu::from_input(input, [13522479, 0, 0, 0, 0, 0]);
     // cpu.run();
-    // fast(0);
+    // println!("{:?}", fast(13522479, 1000));
+    // return Ok(0);
     // fast(13522479);
-    let mut reg0 = 0;
+
+    let mut fewest_remaining = 100_000;
+    let mut best_r0 = 0;
+
+    let mut reg0 = 1;
     Ok(loop {
-        if reg0 % 5000_000 == 0 {
+        if reg0 % 1000_000 == 0 {
             println!("{}", reg0);
         }
-        if let Some(_) = fast(reg0, 1000) {
+        if let Some(remaining) = fast(reg0, 100_000) {
+            if remaining < fewest_remaining {
+                fewest_remaining = remaining;
+                best_r0 = reg0;
+                println!("{}: {}", reg0, remaining);
+            }
             // break reg0;
-            println!("{}", reg0);
+            // println!("{}", reg0);
         }
         reg0 += 1;
 
