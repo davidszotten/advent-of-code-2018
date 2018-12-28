@@ -144,6 +144,19 @@ impl Cpu {
             program,
         }
     }
+
+    fn from_input(input: &str, registers: Registers) -> Self {
+
+        let (pc_info, program) = input.split_at(5);
+        let pc_register = pc_info
+            .split_whitespace()
+            .filter_map(|p| p.parse::<usize>().ok())
+            .nth(0)
+            .unwrap();
+        let program = OpWalker::new(program).collect();
+        Cpu::new(pc_register, registers, program)
+    }
+
     fn get(&self, register: RegType) -> RegType {
         self.registers[register as usize]
     }
@@ -254,20 +267,142 @@ impl Cpu {
 }
 
 fn part1(input: &str) -> Result<i32> {
-    let (pc_info, program) = input.split_at(5);
-    let pc_register = pc_info
-        .split_whitespace()
-        .filter_map(|p| p.parse::<usize>().ok())
-        .nth(0)
-        .unwrap();
-    let program = OpWalker::new(program).collect();
-    let mut cpu = Cpu::new(pc_register, [1, 0, 0, 0, 0, 0], program);
+    let mut cpu = Cpu::from_input(input, [13522479, 0, 0, 0, 0, 0]);
     cpu.run();
     Ok(cpu.get(0))
 }
 
+fn fast(r0: i32, mut max_loops: i32) -> Option<()> {
+    let mut r1 = 0;
+    let mut r2;
+    let mut r3;
+    let mut r5;
+    // #ip 4
+    // 00: seti 123 0 2 : r2 = 123
+    r2 = 123;
+    // 01: bani 2 456 2 : r2 = r2 & 456
+    loop {
+        max_loops -= 1;
+        if max_loops < 0 { return None }
+        // println!("loop1");
+        r2 = r2 & 456;
+    // 02: eqri 2 72 2 : r2 = (r2 == 72)
+        if r2 == 72 {
+    // 03: addr 2 4 4 : r4 = r2 + r4 : jmp rel r2
+            // not read:  r2 = 1;
+            break;
+        }
+    // 04: seti 0 0 4 : jmp 1
+    }
+    // 05: seti 0 0 2 : r2 = 0
+    r2 = 0;
+    // 06: bori 2 65536 5 : r5 = r2 | (2^16)
+    loop {
+        max_loops -= 1;
+        if max_loops < 0 { return None }
+        // println!("loop2");
+        r5 = r2 | 65536;
+        // 07: seti 5234604 6 2 : r2 = 5234604
+        r2 = 5234604;
+        // 08: bani 5 255 3 : r3 = r5 & 255
+        loop {
+            max_loops -= 1;
+            if max_loops < 0 { return None }
+            r3 = r5 & 255;
+            // 09: addr 2 3 2 : r2 = r2 + r3
+            r2 = r2 + r3;
+            // 10: bani 2 16777215 2 : r2 = r2 & 16777215 (2^24-1)
+            r2 = r2 & 16777215;
+            // 11: muli 2 65899 2 : r2 = r2 * 65899
+            r2 = r2 * 65899;
+            // 12: bani 2 16777215 2 : r2 = r2 & (2^24-1)
+            r2 = r2 & 16777215;
+            // 13: gtir 256 5 3 : r3 = (256 > r5) : if r5 < 256 then jmp 28 else jmp 17
+            // println!("13: {} {} {} {} {} {}", r0, r1, r2, r3, "_", r5);
+            if r5 >= 256 {
+                // not read: r3 = 0;
+
+                // 14: addr 3 4 4 : r4 = r4 + r3
+
+                // 15: addi 4 1 4 : jmp 17
+
+                // 16: seti 27 2 4 : jmp 28
+
+                // 17: seti 0 0 3 : r3 = 0
+                r3 = 0;
+                // 18: addi 3 1 1 : r1 = r3 + 1
+                loop {
+                max_loops -= 1;
+                if max_loops < 0 { return None }
+                // println!("18: {} {} {} {} {} {}", r0, r1, r2, r3, "_", r5);
+                    // println!("loop3: r1: {}, r3: {}, r5: {}", r1, r3, r5);
+                    r1 = r3 + 1;
+                    // 19: muli 1 256 1 : r1 = r1 * 256
+                        r1 = r1 * 256;
+                    // 20: gtrr 1 5 1 : r1 = (r1 > r5)
+                        if r1 > r5 {
+                            r1 = 1;
+                            break;
+                        }
+                        // not read r1 = 0;
+
+                    // 21: addr 1 4 4 : r4 = r4 + r1
+
+                    // 22: addi 4 1 4 : jmp 24
+
+                    // 23: seti 25 6 4 : jmp 26
+
+                    // 24: addi 3 1 3 : r3 = r3 + 1
+                        r3 += 1;
+                    // 25: seti 17 7 4 : jmp 18
+                    }
+                // 26: setr 3 4 5 : r5 = r3
+                // println!("26: {} {} {} {} {} {}", r0, r1, r2, r3, "_", r5);
+                r5 = r3;
+                // 27: seti 7 8 4 : jmp 8
+            } else {
+                r3 = 1;
+                break;
+            }
+        }
+        // 28: eqrr 2 0 3 : r3 = (r2 == r0) : if r2 == r0 then end
+        // println!("28: {} {} {} {} {} {}", r0, r1, r2, r3, "_", r5);
+        if r2 == r0 {
+            break;
+        } else {
+            // not read: r3 = 0;
+        }
+        // 29: addr 3 4 4 : r4 = r4 + r3
+
+        // 30: seti 5 6 4 : jmp 6
+    }
+    println!("loops remaining: {}", max_loops);
+    println!("done: {} {} {} {} {} {}", r0, r1, r2, r3, "_", r5);
+    Some(())
+}
+
 fn part2(_input: &str) -> Result<i32> {
-    Ok(0)
+    // let mut cpu = Cpu::from_input(input, [13522479, 0, 0, 0, 0, 0]);
+    // cpu.run();
+    // fast(0);
+    // fast(13522479);
+    let mut reg0 = 0;
+    Ok(loop {
+        if reg0 % 5000_000 == 0 {
+            println!("{}", reg0);
+        }
+        if let Some(_) = fast(reg0, 1000) {
+            // break reg0;
+            println!("{}", reg0);
+        }
+        reg0 += 1;
+
+        if reg0 > 235224800 {
+            break -1;
+        }
+    })
+    // println!("{:?}", res);
+    // Ok(0)
 }
 
 #[cfg(test)]
