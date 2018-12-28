@@ -309,44 +309,8 @@ fn fast(r0: i32, mut max_loops: i32) -> Option<i32> {
             if r5 >= 256 {
                 // not read: r3 = 0;
 
-                // 14: addr 3 4 4 : r4 = r4 + r3
-
-                // 15: addi 4 1 4 : jmp 17
-
-                // 16: seti 27 2 4 : jmp 28
-
-                // 17: seti 0 0 3 : r3 = 0
-                r3 = 0;
-                // 18: addi 3 1 1 : r1 = r3 + 1
-
                 r3 = r5 / 256;
                 r1 = 1;
-
-                // loop {
-                // max_loops -= 1;
-                // if max_loops < 0 { return None }
-                // // println!("18: {} {} {} {} {} {}", r0, r1, r2, r3, "_", r5);
-                //     // println!("loop3: r1: {}, r3: {}, r5: {}", r1, r3, r5);
-                //     r1 = r3 + 1;
-                //     // 19: muli 1 256 1 : r1 = r1 * 256
-                //     r1 = r1 * 256;
-                //     // 20: gtrr 1 5 1 : r1 = (r1 > r5)
-                //     if r1 > r5 {
-                //         r1 = 1;
-                //         break;
-                //     }
-                //     // not read r1 = 0;
-
-                //     // 21: addr 1 4 4 : r4 = r4 + r1
-
-                //     // 22: addi 4 1 4 : jmp 24
-
-                //     // 23: seti 25 6 4 : jmp 26
-
-                //     // 24: addi 3 1 3 : r3 = r3 + 1
-                //         r3 += 1;
-                //     // 25: seti 17 7 4 : jmp 18
-                //     }
 
                 // 26: setr 3 4 5 : r5 = r3
                 // println!("26: {} {} {} {} {} {}", r0, r1, r2, r3, "_", r5);
@@ -399,7 +363,9 @@ fn part2(_input: &str) -> Result<i32> {
             // println!("{}", reg0);
         }
         reg0 += 1;
-
+        if reg0 == 16_777_215 {
+            println!("probably done");
+        }
         if reg0 > 235224800 {
             break -1;
         }
