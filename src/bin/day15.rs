@@ -1,8 +1,8 @@
 use aoc2018::{dispatch, Result};
 use failure::Error;
-use std::collections::{HashMap, VecDeque, HashSet};
-use std::str::FromStr;
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::mem;
+use std::str::FromStr;
 
 fn main() {
     dispatch(&part1, &part2)
@@ -35,7 +35,10 @@ struct Unit {
 
 impl Unit {
     fn new(unit_type: UnitType) -> Self {
-        Unit { unit_type, hit_points: 200 }
+        Unit {
+            unit_type,
+            hit_points: 200,
+        }
     }
 }
 
@@ -76,7 +79,10 @@ impl Game {
     }
 
     fn choose_and_attack(&mut self, neighbour_units: &[Coor]) {
-        let chosen_coor = neighbour_units.iter().min_by_key(|&u| self.units.get(u).unwrap().hit_points).unwrap();
+        let chosen_coor = neighbour_units
+            .iter()
+            .min_by_key(|&u| self.units.get(u).unwrap().hit_points)
+            .unwrap();
         let chosen_unit = self.units.get_mut(chosen_coor).unwrap();
         chosen_unit.hit_points -= 3;
     }
@@ -85,10 +91,14 @@ impl Game {
         let unit = self.units.get(&unit_coor).expect("missing at 2");
         let distances = self.distances(unit_coor);
 
-        let target_coors = self.units.iter().filter(|(_, target)| target.unit_type != unit.unit_type).map(|(coor, _)| coor);
+        let target_coors = self
+            .units
+            .iter()
+            .filter(|(_, target)| target.unit_type != unit.unit_type)
+            .map(|(coor, _)| coor);
         let mut in_range = vec![];
         for target_coor in target_coors {
-                in_range.append(&mut self.in_range(*target_coor));
+            in_range.append(&mut self.in_range(*target_coor));
         }
         let mut reachable = vec![];
         let mut min_distance = None;
@@ -106,9 +116,11 @@ impl Game {
         }
         let chosen = match min_distance {
             None => None,
-            Some(ref min_distance) => {
-                reachable.iter().filter(|&(d, _)| d == min_distance).map(|&(_, c)| c).min_by_key(|&(x, y)| (y, x))
-            },
+            Some(ref min_distance) => reachable
+                .iter()
+                .filter(|&(d, _)| d == min_distance)
+                .map(|&(_, c)| c)
+                .min_by_key(|&(x, y)| (y, x)),
         };
         if let Some(coor) = chosen {
             let new_coor = self.next_step(unit_coor, coor);
@@ -116,7 +128,7 @@ impl Game {
             let unit = self.units.remove(&unit_coor).expect("unit missing");
             self.units.insert(new_coor, unit);
         } else {
-            return
+            return;
         }
     }
 
@@ -199,13 +211,12 @@ impl Game {
                         distances.insert(*neighbour, current_distance + 1);
                         let path = paths.entry(*neighbour).or_insert(vec![]);
                         (*path).push(current);
-                    },
+                    }
                     Some(distance) => {
                         if *distance == current_distance + 1 {
                             let path = paths.entry(*neighbour).or_insert(vec![]);
                             (*path).push(current);
                         }
-
                     }
                 }
             }
@@ -233,7 +244,10 @@ impl Game {
             mem::swap(&mut possible_paths, &mut new_possible);
             // println!("pp: {:?}", possible_paths);
         }
-        *possible_paths.iter().min_by_key(|&(x, y)| (y, x)).expect("shortest path is empty")
+        *possible_paths
+            .iter()
+            .min_by_key(|&(x, y)| (y, x))
+            .expect("shortest path is empty")
     }
 
     fn adjacent(&self, coor: &Coor) -> [Coor; 4] {
