@@ -38,7 +38,7 @@ type Coor = (usize, usize);
 
 #[derive(Debug, Clone, Copy)]
 struct Unit {
-    hit_points: i16,
+    hit_points: i32,
     unit_type: UnitType,
 }
 
@@ -57,7 +57,7 @@ struct Game {
 }
 
 impl Game {
-    fn remaining_hit_points(&self) -> i16 {
+    fn remaining_hit_points(&self) -> i32 {
         self.units.values().map(|&u| u.hit_points).sum()
     }
 
@@ -382,7 +382,7 @@ impl Input {
     }
 }
 
-fn part1(input: &str) -> Result<i16> {
+fn part1(input: &str) -> Result<i32> {
     let mut game: Game = input.parse()?;
     game.print();
     let mut round = 0;
