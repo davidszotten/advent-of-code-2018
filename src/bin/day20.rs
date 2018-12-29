@@ -206,13 +206,10 @@ fn get_distances(pattern: &Pattern) -> HashMap<Coor, usize> {
             .clone();
         if let Some(neighbours) = edges.get(&current) {
             for &next in neighbours {
-                distances.entry(next).or_insert_with(|| {
-                    if queue.push_back(next) == () {
-                        current_distance + 1
-                    } else {
-                        panic!("haxx")
-                    }
-                });
+                if !distances.contains_key(&next) {
+                    queue.push_back(next);
+                    distances.insert(next, current_distance + 1);
+                }
             }
         }
     }
