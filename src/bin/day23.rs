@@ -69,7 +69,6 @@ fn part1(input: &str) -> Result<usize> {
     Ok(count)
 }
 
-
 fn part2(input: &str) -> Result<i32> {
     let bots = InputWalker::new(input).collect::<Vec<_>>();
     let max_x = bots.iter().max_by_key(|b| b.x).unwrap().x;
