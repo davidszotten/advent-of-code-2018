@@ -14,6 +14,15 @@ enum UnitType {
     Goblin,
 }
 
+impl UnitType {
+    fn symbol(&self) -> char {
+        match *self {
+            UnitType::Elf => 'E',
+            UnitType::Goblin => 'G',
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Terrain {
     Wall,
@@ -48,48 +57,86 @@ struct Game {
 }
 
 impl Game {
+    fn remaining_hit_points(&self) -> i16 {
+        self.units.values().map(|&u| u.hit_points).sum()
+    }
+
     fn round(&mut self) -> Option<()> {
         // println!("{:?}", self.units);
         let mut order: Vec<_> = self.units.keys().map(|&c| c).collect();
         order.sort_by_key(|&(x, y)| (y, x));
         for coor in order {
-            let unit = self.units.get(&coor).expect("missing at 1");
+            // let unit = self.units.get(&coor).expect("missing at 1");
+            let unit_type = match self.units.get(&coor) {
+                Some(unit) => unit.unit_type,
+                None => continue, // unit killed
+            };
 
-            // TODO: make sure there are enemies remaining
-
-            let mut neighbour_units = vec![];
-            for neighbour in self.adjacent(&coor).iter() {
-                if let Some(neighbour_unit) = self.units.get(neighbour) {
-                    if neighbour_unit.unit_type != unit.unit_type {
-                        // neighbour_units.push(neighbour_unit.clone());
-                        neighbour_units.push(*neighbour);
-                    }
-                }
+            if self
+                .units
+                .values()
+                .filter(|u| u.unit_type != unit_type)
+                .count()
+                == 0
+            {
+                println!("no {} left", unit_type.symbol());
+                return None;
             }
+
+            let neighbour_units = self.neighbour_units(&coor, &unit_type);
+            let coor = if neighbour_units.len() == 0 {
+                self.choose_and_move(&coor)
+            } else {
+                coor
+            };
+
+            let neighbour_units = self.neighbour_units(&coor, &unit_type);
             if neighbour_units.len() > 0 {
                 // println!("attack: {:?}", coor);
                 // let unit = self.units.get(coor).expect("get unit");
                 self.choose_and_attack(&neighbour_units[..]);
-            } else {
-                // println!("move: {:?}", coor);
-                self.choose_and_move(coor);
             }
         }
         Some(())
     }
 
+    fn neighbour_units(&self, coor: &Coor, unit_type: &UnitType) -> Vec<Coor> {
+        let mut neighbour_units = vec![];
+        for neighbour in self.adjacent(&coor).iter() {
+            if let Some(neighbour_unit) = self.units.get(neighbour) {
+                if neighbour_unit.unit_type != *unit_type {
+                    // neighbour_units.push(neighbour_unit.clone());
+                    neighbour_units.push(*neighbour);
+                }
+            }
+        }
+        neighbour_units
+    }
+
     fn choose_and_attack(&mut self, neighbour_units: &[Coor]) {
+        let lowest_hit_points = neighbour_units
+            .iter()
+            .map(|c| self.units.get(c).unwrap().hit_points)
+            .min()
+            .unwrap();
+
         let chosen_coor = neighbour_units
             .iter()
-            .min_by_key(|&u| self.units.get(u).unwrap().hit_points)
+            .map(|c| (self.units.get(c).unwrap(), c))
+            .filter(|&(u, _)| u.hit_points == lowest_hit_points)
+            .map(|(_, c)| c)
+            .min_by_key(|&(x, y)| (y, x))
             .unwrap();
         let chosen_unit = self.units.get_mut(chosen_coor).unwrap();
         chosen_unit.hit_points -= 3;
+        if chosen_unit.hit_points <= 0 {
+            self.units.remove(chosen_coor);
+        }
     }
 
-    fn choose_and_move(&mut self, unit_coor: Coor) {
+    fn choose_and_move(&mut self, unit_coor: &Coor) -> Coor {
         let unit = self.units.get(&unit_coor).expect("missing at 2");
-        let distances = self.distances(unit_coor);
+        let distances = self.distances(*unit_coor);
 
         let target_coors = self
             .units
@@ -123,12 +170,13 @@ impl Game {
                 .min_by_key(|&(x, y)| (y, x)),
         };
         if let Some(coor) = chosen {
-            let new_coor = self.next_step(unit_coor, coor);
+            let new_coor = self.next_step(*unit_coor, coor);
             // println!("{:?} -> {:?} ({:?})", unit_coor, coor, new_coor);
             let unit = self.units.remove(&unit_coor).expect("unit missing");
             self.units.insert(new_coor, unit);
+            new_coor
         } else {
-            return;
+            *unit_coor
         }
     }
 
@@ -275,6 +323,14 @@ impl Game {
                     }
                 }
             }
+            let mut units_in_row: Vec<_> = self.units.iter().filter(|&(c, _)| c.1 == y).collect();
+            print!("   ");
+            units_in_row.sort_by_key(|&(c, _)| c.0);
+            for (_, &unit) in units_in_row {
+                print!("{}({})", unit.unit_type.symbol(), unit.hit_points);
+                print!(", ");
+            }
+
             println!("");
         }
     }
@@ -326,16 +382,17 @@ impl Input {
     }
 }
 
-fn part1(input: &str) -> Result<i32> {
+fn part1(input: &str) -> Result<i16> {
     let mut game: Game = input.parse()?;
     game.print();
-    game.round();
-    game.print();
-    game.round();
-    game.print();
-    game.round();
-    game.print();
-    Ok(0)
+    let mut round = 0;
+    while let Some(_) = game.round() {
+        round += 1;
+        println!("After {} rounds", round);
+        game.print();
+        println!("");
+    }
+    Ok(game.remaining_hit_points() * round)
 }
 
 fn part2(_input: &str) -> Result<i32> {
