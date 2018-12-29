@@ -312,14 +312,18 @@ impl Game {
                 }
             }
             let mut units_in_row: Vec<_> = self.units.iter().filter(|&(c, _)| c.1 == y).collect();
-            print!("   ");
             units_in_row.sort_by_key(|&(c, _)| c.0);
+            let mut unit_text = vec![];
             for (_, &unit) in units_in_row {
-                print!("{}({})", unit.unit_type.symbol(), unit.hit_points);
-                print!(", ");
+                unit_text.push(
+                    format!("{}({})", unit.unit_type.symbol(), unit.hit_points)
+                )
             }
-
-            println!("");
+            if !unit_text.is_empty() {
+                println!("   {}", unit_text.join(", "));
+            } else {
+                println!("");
+            }
         }
         println!("");
     }
@@ -377,10 +381,11 @@ fn part1(input: &str) -> Result<i32> {
     let mut round = 0;
     while let Some(_) = game.round() {
         round += 1;
-        println!("After {} rounds", round);
+        println!("After {} rounds:", round);
         game.print();
-        println!("");
     }
+    game.print();
+    println!("{} * {}", game.remaining_hit_points(), round);
     Ok(game.remaining_hit_points() * round)
 }
 
