@@ -54,9 +54,17 @@ impl Unit {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum RoundResult {
+    Continue,
+    GameOver,
+    ElfDied,
+}
+
 struct Game {
     units: HashMap<Coor, Unit>,
     terrain: HashMap<Coor, Terrain>,
+    elf_power: i32,
 }
 
 impl Game {
@@ -64,7 +72,7 @@ impl Game {
         self.units.values().map(|&u| u.hit_points).sum()
     }
 
-    fn round(&mut self) -> Option<()> {
+    fn round(&mut self) -> RoundResult {
         let mut order: Vec<(usize, Coor)> = self.units.iter().map(|(c, u)| (u.id, *c)).collect();
         order.sort_by_key(|&(_, (x, y))| (y, x));
         for (id, coor) in order {
@@ -80,7 +88,7 @@ impl Game {
                 .count()
                 == 0
             {
-                return None;
+                return RoundResult::GameOver;
             }
 
             let neighbour_units = self.neighbour_units(&coor, &unit_type);
@@ -92,10 +100,14 @@ impl Game {
 
             let neighbour_units = self.neighbour_units(&coor, &unit_type);
             if neighbour_units.len() > 0 {
-                self.choose_and_attack(&neighbour_units[..]);
+                if let Some(killed) = self.choose_and_attack(&neighbour_units[..]) {
+                    if killed.unit_type == UnitType::Elf {
+                        return RoundResult::ElfDied;
+                    }
+                }
             }
         }
-        Some(())
+        RoundResult::Continue
     }
 
     fn neighbour_units(&self, coor: &Coor, unit_type: &UnitType) -> Vec<Coor> {
@@ -110,7 +122,7 @@ impl Game {
         neighbour_units
     }
 
-    fn choose_and_attack(&mut self, neighbour_units: &[Coor]) {
+    fn choose_and_attack(&mut self, neighbour_units: &[Coor]) -> Option<Unit> {
         let lowest_hit_points = neighbour_units
             .iter()
             .map(|c| self.units.get(c).unwrap().hit_points)
@@ -125,9 +137,16 @@ impl Game {
             .min_by_key(|&(x, y)| (y, x))
             .unwrap();
         let chosen_unit = self.units.get_mut(chosen_coor).unwrap();
-        chosen_unit.hit_points -= 3;
+        let power = match chosen_unit.unit_type {
+            // nb. this is the target, so reverse
+            UnitType::Goblin => self.elf_power,
+            UnitType::Elf => 3,
+        };
+        chosen_unit.hit_points -= power;
         if chosen_unit.hit_points <= 0 {
-            self.units.remove(chosen_coor);
+            self.units.remove(chosen_coor)
+        } else {
+            None
         }
     }
 
@@ -350,7 +369,11 @@ impl FromStr for Game {
                 }
             }
         }
-        Ok(Game { terrain, units })
+        Ok(Game {
+            terrain,
+            units,
+            elf_power: 3,
+        })
     }
 }
 
@@ -384,7 +407,7 @@ fn part1(input: &str) -> Result<i32> {
     let mut game: Game = input.parse()?;
     // game.print();
     let mut round = 0;
-    while let Some(_) = game.round() {
+    while game.round() == RoundResult::Continue {
         round += 1;
         // println!("After {} rounds:", round);
         // game.print();
@@ -394,8 +417,28 @@ fn part1(input: &str) -> Result<i32> {
     Ok(game.remaining_hit_points() * round)
 }
 
-fn part2(_input: &str) -> Result<i32> {
-    Ok(0)
+fn part2(input: &str) -> Result<i32> {
+    let mut game: Game;
+    let mut round;
+    let mut elf_power = 3;
+    loop {
+        round = 0;
+        elf_power += 1;
+        game = input.parse()?;
+        game.elf_power = elf_power;
+        if loop {
+            match game.round() {
+                RoundResult::Continue => {
+                    round += 1;
+                }
+                RoundResult::GameOver => break true,
+                RoundResult::ElfDied => break false,
+            }
+        } {
+            break;
+        }
+    }
+    Ok(game.remaining_hit_points() * round)
 }
 
 #[cfg(test)]
