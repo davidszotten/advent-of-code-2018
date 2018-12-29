@@ -15,6 +15,7 @@ enum UnitType {
 }
 
 impl UnitType {
+    #[allow(dead_code)]
     fn symbol(&self) -> char {
         match *self {
             UnitType::Elf => 'E',
@@ -38,13 +39,15 @@ type Coor = (usize, usize);
 
 #[derive(Debug, Clone, Copy)]
 struct Unit {
+    id: usize,
     hit_points: i32,
     unit_type: UnitType,
 }
 
 impl Unit {
-    fn new(unit_type: UnitType) -> Self {
+    fn new(id: usize, unit_type: UnitType) -> Self {
         Unit {
+            id,
             unit_type,
             hit_points: 200,
         }
@@ -62,12 +65,12 @@ impl Game {
     }
 
     fn round(&mut self) -> Option<()> {
-        let mut order: Vec<_> = self.units.keys().map(|&c| c).collect();
-        order.sort_by_key(|&(x, y)| (y, x));
-        for coor in order {
+        let mut order: Vec<(usize, Coor)> = self.units.iter().map(|(c, u)| (u.id, *c)).collect();
+        order.sort_by_key(|&(_, (x, y))| (y, x));
+        for (id, coor) in order {
             let unit_type = match self.units.get(&coor) {
-                Some(unit) => unit.unit_type,
-                None => continue, // unit killed
+                Some(unit) if unit.id == id => unit.unit_type,
+                _ => continue, // unit killed
             };
 
             if self
@@ -291,6 +294,7 @@ impl Game {
         [(x, y - 1), (x - 1, y), (x + 1, y), (x, y + 1)]
     }
 
+    #[allow(dead_code)]
     fn print(&self) {
         use self::Terrain::*;
         use self::UnitType::*;
@@ -315,9 +319,7 @@ impl Game {
             units_in_row.sort_by_key(|&(c, _)| c.0);
             let mut unit_text = vec![];
             for (_, &unit) in units_in_row {
-                unit_text.push(
-                    format!("{}({})", unit.unit_type.symbol(), unit.hit_points)
-                )
+                unit_text.push(format!("{}({})", unit.unit_type.symbol(), unit.hit_points))
             }
             if !unit_text.is_empty() {
                 println!("   {}", unit_text.join(", "));
@@ -336,12 +338,15 @@ impl FromStr for Game {
         let mut terrain = HashMap::new();
         let mut units = HashMap::new();
 
+        let mut unit_id = 0;
+
         for (y, row) in s.split('\n').enumerate() {
             for (x, c) in row.chars().enumerate() {
                 let input = Input::from_char(c);
                 terrain.insert((x, y), input.terrain);
                 if let Some(unit_type) = input.unit_type {
-                    units.insert((x, y), Unit::new(unit_type));
+                    units.insert((x, y), Unit::new(unit_id, unit_type));
+                    unit_id += 1;
                 }
             }
         }
@@ -377,15 +382,15 @@ impl Input {
 
 fn part1(input: &str) -> Result<i32> {
     let mut game: Game = input.parse()?;
-    game.print();
+    // game.print();
     let mut round = 0;
     while let Some(_) = game.round() {
         round += 1;
-        println!("After {} rounds:", round);
-        game.print();
+        // println!("After {} rounds:", round);
+        // game.print();
     }
-    game.print();
-    println!("{} * {}", game.remaining_hit_points(), round);
+    // game.print();
+    // println!("{} * {}", game.remaining_hit_points(), round);
     Ok(game.remaining_hit_points() * round)
 }
 
