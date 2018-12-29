@@ -62,11 +62,9 @@ impl Game {
     }
 
     fn round(&mut self) -> Option<()> {
-        // println!("{:?}", self.units);
         let mut order: Vec<_> = self.units.keys().map(|&c| c).collect();
         order.sort_by_key(|&(x, y)| (y, x));
         for coor in order {
-            // let unit = self.units.get(&coor).expect("missing at 1");
             let unit_type = match self.units.get(&coor) {
                 Some(unit) => unit.unit_type,
                 None => continue, // unit killed
@@ -79,7 +77,6 @@ impl Game {
                 .count()
                 == 0
             {
-                println!("no {} left", unit_type.symbol());
                 return None;
             }
 
@@ -92,8 +89,6 @@ impl Game {
 
             let neighbour_units = self.neighbour_units(&coor, &unit_type);
             if neighbour_units.len() > 0 {
-                // println!("attack: {:?}", coor);
-                // let unit = self.units.get(coor).expect("get unit");
                 self.choose_and_attack(&neighbour_units[..]);
             }
         }
@@ -105,7 +100,6 @@ impl Game {
         for neighbour in self.adjacent(&coor).iter() {
             if let Some(neighbour_unit) = self.units.get(neighbour) {
                 if neighbour_unit.unit_type != *unit_type {
-                    // neighbour_units.push(neighbour_unit.clone());
                     neighbour_units.push(*neighbour);
                 }
             }
@@ -171,7 +165,6 @@ impl Game {
         };
         if let Some(coor) = chosen {
             let new_coor = self.next_step(*unit_coor, coor);
-            // println!("{:?} -> {:?} ({:?})", unit_coor, coor, new_coor);
             let unit = self.units.remove(&unit_coor).expect("unit missing");
             self.units.insert(new_coor, unit);
             new_coor
@@ -270,12 +263,8 @@ impl Game {
             }
         }
         let mut possible_paths: HashSet<Coor> = HashSet::new();
-        // for path in paths.get(&to).expect("no shortest path found") {
-        //     possible_paths.insert(*path);
-        // }
         possible_paths.insert(to);
         let mut new_possible: HashSet<Coor> = HashSet::new();
-        // println!("{:?} -> {:?}:  {:?}", from, to, possible_paths);
         'outer: loop {
             new_possible.clear();
             for possible in possible_paths.iter() {
@@ -290,7 +279,6 @@ impl Game {
                 }
             }
             mem::swap(&mut possible_paths, &mut new_possible);
-            // println!("pp: {:?}", possible_paths);
         }
         *possible_paths
             .iter()
@@ -333,6 +321,7 @@ impl Game {
 
             println!("");
         }
+        println!("");
     }
 }
 
