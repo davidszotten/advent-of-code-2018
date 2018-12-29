@@ -146,7 +146,6 @@ impl Cpu {
     }
 
     fn from_input(input: &str, registers: Registers) -> Self {
-
         let (pc_info, program) = input.split_at(5);
         let pc_register = pc_info
             .split_whitespace()
@@ -286,7 +285,9 @@ fn fast(r0: i32, mut max_loops: i32) -> Option<i32> {
     // 06: bori 2 65536 5 : r5 = r2 | (2^16)
     while r2 != r0 {
         max_loops -= 1;
-        if max_loops < 0 { return None }
+        if max_loops < 0 {
+            return None;
+        }
         // println!("loop2");
         r5 = r2 | 65536;
         // 07: seti 5234604 6 2 : r2 = 5234604
@@ -294,7 +295,9 @@ fn fast(r0: i32, mut max_loops: i32) -> Option<i32> {
         // 08: bani 5 255 3 : r3 = r5 & 255
         loop {
             max_loops -= 1;
-            if max_loops < 0 { return None }
+            if max_loops < 0 {
+                return None;
+            }
             r3 = r5 & 255;
             // 09: addr 2 3 2 : r2 = r2 + r3
             r2 = r2 + r3;
@@ -315,7 +318,7 @@ fn fast(r0: i32, mut max_loops: i32) -> Option<i32> {
                 // 26: setr 3 4 5 : r5 = r3
                 // println!("26: {} {} {} {} {} {}", r0, r1, r2, r3, "_", r5);
                 r5 = r3;
-                // 27: seti 7 8 4 : jmp 8
+            // 27: seti 7 8 4 : jmp 8
             } else {
                 r3 = 1;
                 break;
