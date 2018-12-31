@@ -186,6 +186,47 @@ impl Cpu {
         }
     }
 
+    fn run_fast(&mut self) -> i32 {
+        use std::collections::HashSet;
+        let mut seen = HashSet::new();
+        let mut prev = 0;
+
+        loop {
+            let instruction_idx = self.get(self.pc_register as i32);
+            if instruction_idx < 0 {
+                break 0;
+            }
+            // println!("{}: {:?}", instruction_idx, self.registers);
+            if instruction_idx == 18 {
+                // faster implementation of what appears to be r3 = r5 / 256 (integer division)
+                self.set(3, self.get(5) / 256);
+                self.set(self.pc_register as i32, 26);
+                continue;
+
+            }
+
+            if instruction_idx == 28 {
+                let r2 = self.get(2);
+                if seen.contains(&r2) {
+                    break prev;
+                }
+                seen.insert(r2);
+                prev = r2;
+            }
+
+            if let Some(&op) = self.program.get(instruction_idx as usize) {
+                self.dispatch(&op.op_type, op.a, op.b, op.c);
+                let pc = self.get(self.pc_register as i32) + 1;
+                if pc < 0 || pc >= self.program.len() as i32 {
+                    break 0;
+                }
+                self.set(self.pc_register as i32, pc);
+            } else {
+                break 0;
+            }
+        }
+    }
+
     fn dispatch(&mut self, op: &OpType, a: RegType, b: RegType, c: RegType) {
         use self::OpType::*;
         match op {
@@ -266,115 +307,17 @@ impl Cpu {
 }
 
 fn part1(input: &str) -> Result<i32> {
-    let mut cpu = Cpu::from_input(input, [29395, 0, 0, 0, 0, 0]);
+    let mut cpu = Cpu::from_input(input, [0, 0, 0, 0, 0, 0]);
     // let mut cpu = Cpu::from_input(input, [13522479, 0, 0, 0, 0, 0]);
     cpu.run();
     Ok(cpu.get(0))
 }
 
-fn fast(r0: i32, mut max_loops: i32) -> Option<i32> {
-    let mut r1 = 0;
-    let mut r2;
-    let mut r3 = 0;
-    let mut r5 = 0;
-    // #ip 4
-    // 00 - 04: self test
 
-    // 05: seti 0 0 2 : r2 = 0
-    r2 = 0;
-    // 06: bori 2 65536 5 : r5 = r2 | (2^16)
-    while r2 != r0 {
-        max_loops -= 1;
-        if max_loops < 0 {
-            return None;
-        }
-        // println!("loop2");
-        r5 = r2 | 65536;
-        // 07: seti 5234604 6 2 : r2 = 5234604
-        r2 = 5234604;
-        // 08: bani 5 255 3 : r3 = r5 & 255
-        loop {
-            max_loops -= 1;
-            if max_loops < 0 {
-                return None;
-            }
-            r3 = r5 & 255;
-            // 09: addr 2 3 2 : r2 = r2 + r3
-            r2 = r2 + r3;
-            // 10: bani 2 16777215 2 : r2 = r2 & 16777215 (2^24-1)
-            r2 = r2 & 16777215;
-            // 11: muli 2 65899 2 : r2 = r2 * 65899
-            r2 = r2 * 65899;
-            // 12: bani 2 16777215 2 : r2 = r2 & (2^24-1)
-            r2 = r2 & 16777215;
-            // 13: gtir 256 5 3 : r3 = (256 > r5) : if r5 < 256 then jmp 28 else jmp 17
-            // println!("13: {} {} {} {} {} {}", r0, r1, r2, r3, "_", r5);
-            if r5 >= 256 {
-                // not read: r3 = 0;
+fn part2(input: &str) -> Result<i32> {
+    let mut cpu = Cpu::from_input(input, [0, 0, 0, 0, 0, 0]);
+    Ok(cpu.run_fast())
 
-                r3 = r5 / 256;
-                r1 = 1;
-
-                // 26: setr 3 4 5 : r5 = r3
-                // println!("26: {} {} {} {} {} {}", r0, r1, r2, r3, "_", r5);
-                r5 = r3;
-            // 27: seti 7 8 4 : jmp 8
-            } else {
-                r3 = 1;
-                break;
-            }
-        }
-        // 28: eqrr 2 0 3 : r3 = (r2 == r0) : if r2 == r0 then end
-        // println!("28: {} {} {} {} {} {}", r0, r1, r2, r3, "_", r5);
-        // if r2 == r0 {
-        //     break;
-        // } else {
-        //     // not read: r3 = 0;
-        // }
-        // 29: addr 3 4 4 : r4 = r4 + r3
-
-        // 30: seti 5 6 4 : jmp 6
-    }
-    // println!("loops remaining: {}", max_loops);
-    // println!("done: {} {} {} {} {} {}", r0, r1, r2, r3, "_", r5);
-    // println!("r0: {}, loops remaining: {}", r0, max_loops);
-    Some(max_loops)
-}
-
-fn part2(_input: &str) -> Result<i32> {
-    // let mut cpu = Cpu::from_input(input, [13522479, 0, 0, 0, 0, 0]);
-    // cpu.run();
-    // println!("{:?}", fast(13522479, 1000));
-    // return Ok(0);
-    // fast(13522479);
-
-    let mut fewest_remaining = 100_000;
-    let mut best_r0 = 0;
-
-    let mut reg0 = 1;
-    Ok(loop {
-        if reg0 % 1000_000 == 0 {
-            println!("{}", reg0);
-        }
-        if let Some(remaining) = fast(reg0, 100_000) {
-            if remaining < fewest_remaining {
-                fewest_remaining = remaining;
-                best_r0 = reg0;
-                println!("{}: {}", reg0, remaining);
-            }
-            // break reg0;
-            // println!("{}", reg0);
-        }
-        reg0 += 1;
-        if reg0 == 16_777_215 {
-            println!("probably done");
-        }
-        if reg0 > 235224800 {
-            break -1;
-        }
-    })
-    // println!("{:?}", res);
-    // Ok(0)
 }
 
 #[cfg(test)]
